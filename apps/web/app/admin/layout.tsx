@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,9 +27,7 @@ export default function AdminLayout({
       // Role check: call API /api/v1/me to get role; if not tenant_admin redirect
       const token = session.access_token;
       try {
-        const res = await fetch((process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000") + "/api/v1/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch("/api/v1/me", { accessToken: token });
         if (res.status === 401) {
           router.replace("/login?redirect=/admin");
           return;

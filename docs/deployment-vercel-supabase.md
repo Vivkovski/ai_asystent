@@ -60,16 +60,31 @@ Te zmienne są używane przez funkcję Pythona `api/backend.py`.
 
 ---
 
-## 5. Kolejność
+## 5. Domyślny użytkownik admin
 
-1. Supabase: projekt, migracje, seed (opcjonalnie).
+Aby mieć konto do logowania (email + hasło) z rolą **tenant_admin**:
+
+1. Ustaw lokalnie: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (service_role z Supabase).
+2. Z katalogu repo uruchom:
+   ```bash
+   cd apps/api && uv run python ../../scripts/seed_admin_user.py
+   ```
+3. Logowanie w aplikacji: **email** `admin@example.com`, **hasło** `admin1234`.
+
+Skrypt tworzy użytkownika w Supabase Auth (z potwierdzonym emałem) oraz tenant „Demo Tenant” i profil z rolą `tenant_admin`. Jeśli użytkownik z tym emałem już istnieje, skrypt użyje jego ID i zaktualizuje tenant/profil.
+
+---
+
+## 6. Kolejność
+
+1. Supabase: projekt, migracje, seed (opcjonalnie; dla admina: `scripts/seed_admin_user.py`).
 2. Vercel: jeden projekt „web”, deploy z repo (build + Python z `vercel.json`).
 3. Zmienne: Supabase + backend w ustawieniach projektu „web”.
 4. Google OAuth: redirect URI = `https://<twoja-domena>.vercel.app/admin/integrations/google/callback`.
 
 ---
 
-## 6. Szybki checklist
+## 7. Szybki checklist
 
 | Gdzie        | Co ustawić |
 |-------------|------------|
