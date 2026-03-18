@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply box-border;
+  }
+  *,
+  *::before,
+  *::after {
+    @apply box-border;
+  }
+  body {
+    @apply antialiased text-neutral-800 bg-white font-sans;
+  }
+}

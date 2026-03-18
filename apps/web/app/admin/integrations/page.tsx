@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Badge, Button, PageTitle } from "@/components/ui";
 
 type Integration = {
   id: string;
@@ -47,53 +48,58 @@ export default function AdminIntegrationsPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (!token) return <p>Ładowanie…</p>;
-  if (loading) return <p>Ładowanie listy…</p>;
-  if (error) return <p className="text-red-600">Błąd: {error}</p>;
+  if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
+  if (loading) return <p className="text-neutral-600">Ładowanie listy…</p>;
+  if (error) return <p className="text-error">Błąd: {error}</p>;
+
+  const getStatusVariant = (row: Integration): "success" | "warning" | "error" => {
+    if (!row.enabled) return "warning";
+    if (row.last_error) return "error";
+    return "success";
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Integracje</h1>
-        <Link
-          href="/admin/integrations/add"
-          className="rounded bg-blue-600 text-white px-4 py-2 text-sm font-medium hover:bg-blue-700"
-        >
-          Dodaj integrację
+        <PageTitle title="Integracje" />
+        <Link href="/admin/integrations/add">
+          <Button variant="primary" size="md">
+            Dodaj integrację
+          </Button>
         </Link>
       </div>
       {items.length === 0 ? (
-        <p className="text-gray-600">Brak integracji. Dodaj pierwszą, aby asystent mógł korzystać z danych.</p>
+        <p className="text-neutral-600">Brak integracji. Dodaj pierwszą, aby asystent mógł korzystać z danych.</p>
       ) : (
-        <table className="w-full border-collapse border border-gray-200">
+        <table className="w-full border-collapse border border-neutral-200">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="border border-gray-200 p-2 text-left">Typ</th>
-              <th className="border border-gray-200 p-2 text-left">Nazwa</th>
-              <th className="border border-gray-200 p-2 text-left">Status</th>
-              <th className="border border-gray-200 p-2 text-left">Ostatni test</th>
-              <th className="border border-gray-200 p-2 text-left">Błąd</th>
-              <th className="border border-gray-200 p-2 text-left">Akcje</th>
+            <tr className="bg-neutral-50">
+              <th className="border border-neutral-200 p-2 text-left">Typ</th>
+              <th className="border border-neutral-200 p-2 text-left">Nazwa</th>
+              <th className="border border-neutral-200 p-2 text-left">Status</th>
+              <th className="border border-neutral-200 p-2 text-left">Ostatni test</th>
+              <th className="border border-neutral-200 p-2 text-left">Błąd</th>
+              <th className="border border-neutral-200 p-2 text-left">Akcje</th>
             </tr>
           </thead>
           <tbody>
             {items.map((row) => (
               <tr key={row.id}>
-                <td className="border border-gray-200 p-2">{TYPE_LABELS[row.type] || row.type}</td>
-                <td className="border border-gray-200 p-2">{row.display_name || "—"}</td>
-                <td className="border border-gray-200 p-2">
-                  <span className={row.enabled && !row.last_error ? "text-green-600" : "text-amber-600"}>
+                <td className="border border-neutral-200 p-2">{TYPE_LABELS[row.type] || row.type}</td>
+                <td className="border border-neutral-200 p-2">{row.display_name || "—"}</td>
+                <td className="border border-neutral-200 p-2">
+                  <Badge variant={getStatusVariant(row)}>
                     {row.enabled ? (row.last_error ? "Błąd" : "Połączono") : "Wyłączona"}
-                  </span>
+                  </Badge>
                 </td>
-                <td className="border border-gray-200 p-2 text-sm text-gray-600">
+                <td className="border border-neutral-200 p-2 text-sm text-neutral-600">
                   {row.last_tested_at ? new Date(row.last_tested_at).toLocaleString() : "—"}
                 </td>
-                <td className="border border-gray-200 p-2 text-sm text-red-600 max-w-xs truncate" title={row.last_error || ""}>
+                <td className="border border-neutral-200 p-2 text-sm text-error max-w-xs truncate" title={row.last_error || ""}>
                   {row.last_error || "—"}
                 </td>
-                <td className="border border-gray-200 p-2">
-                  <Link href={`/admin/integrations/${row.id}`} className="text-blue-600 text-sm hover:underline">
+                <td className="border border-neutral-200 p-2">
+                  <Link href={`/admin/integrations/${row.id}`} className="text-primary-600 text-sm hover:underline">
                     Edytuj
                   </Link>
                 </td>

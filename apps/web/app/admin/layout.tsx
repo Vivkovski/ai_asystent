@@ -50,27 +50,27 @@ export default function AdminLayout({
   if (!mounted || role !== "tenant_admin") {
     return (
       <main className="p-4">
-        <p>Ładowanie…</p>
+        <p className="text-neutral-600">Ładowanie…</p>
       </main>
     );
   }
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-56 border-r p-4 flex flex-col gap-2">
+      <aside className="w-56 border-r border-neutral-200 p-4 flex flex-col gap-2">
         <Link
           href="/admin"
-          className={pathname === "/admin" ? "font-semibold" : ""}
+          className={pathname === "/admin" ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-primary-600"}
         >
           Panel
         </Link>
         <Link
           href="/admin/integrations"
-          className={pathname === "/admin/integrations" ? "font-semibold" : ""}
+          className={pathname === "/admin/integrations" ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-primary-600"}
         >
           Integracje
         </Link>
-        <Link href="/chat" className="mt-auto text-sm text-gray-600">
+        <Link href="/chat" className="mt-auto text-sm text-neutral-600 hover:text-primary-600">
           ← Chat
         </Link>
       </aside>

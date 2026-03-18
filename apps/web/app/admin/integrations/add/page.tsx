@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Button, Input, Label, PageTitle } from "@/components/ui";
 
 const TYPES = [
   { id: "bitrix", label: "Bitrix24" },
@@ -113,57 +114,53 @@ export default function AddIntegrationPage() {
         ? refreshToken.trim().length > 0  // manual token path
         : false;
 
-  if (!token) return <p>Ładowanie…</p>;
+  if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
 
   return (
     <div className="max-w-md">
-      <Link href="/admin/integrations" className="text-blue-600 text-sm hover:underline mb-4 inline-block">
+      <Link href="/admin/integrations" className="text-primary-600 text-sm hover:underline mb-4 inline-block">
         ← Lista integracji
       </Link>
-      <h1 className="text-xl font-semibold mb-4">Dodaj integrację</h1>
+      <PageTitle title="Dodaj integrację" className="mb-4" />
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Typ</label>
+          <Label>Typ</Label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border rounded px-3 py-2"
+            className="w-full border border-neutral-200 rounded px-3 py-2"
           >
             {TYPES.map((t) => (
               <option key={t.id} value={t.id}>{t.label}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Nazwa (opcjonalnie)</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={TYPES.find((t) => t.id === type)?.label}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
+        <Input
+          label="Nazwa (opcjonalnie)"
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder={TYPES.find((t) => t.id === type)?.label}
+        />
         {type === "bitrix" && (
-          <div>
-            <label className="block text-sm font-medium mb-1">URL webhooka Bitrix24</label>
-            <input
-              type="url"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
+          <Input
+            label="URL webhooka Bitrix24"
+            type="url"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://..."
+          />
         )}
         {(type === "google_drive" || type === "google_sheets") && (
           <div className="space-y-3">
             <div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="md"
                 onClick={handleConnectGoogle}
                 disabled={oauthLoading || !token}
-                className="rounded bg-white border border-gray-300 text-gray-700 px-4 py-2 text-sm font-medium flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"
+                className="flex items-center gap-2"
               >
                 {oauthLoading ? (
                   "Przekierowuję…"
@@ -178,8 +175,8 @@ export default function AddIntegrationPage() {
                     Zaloguj się przez Google
                   </>
                 )}
-              </button>
-              <p className="text-xs text-gray-500 mt-1">
+              </Button>
+              <p className="text-xs text-neutral-500 mt-1">
                 Zostaniesz przekierowany do Google; po zalogowaniu integracja zostanie dodana automatycznie.
               </p>
             </div>
@@ -187,18 +184,18 @@ export default function AddIntegrationPage() {
               <button
                 type="button"
                 onClick={() => setShowManualToken((v) => !v)}
-                className="text-sm text-gray-600 hover:underline"
+                className="text-sm text-neutral-600 hover:underline"
               >
                 {showManualToken ? "Ukryj" : "Albo wklej refresh token ręcznie"}
               </button>
               {showManualToken && (
                 <div className="mt-2">
-                  <input
+                  <Input
                     type="password"
                     value={refreshToken}
                     onChange={(e) => setRefreshToken(e.target.value)}
                     placeholder="Refresh token z OAuth Playground"
-                    className="w-full border rounded px-3 py-2 font-mono text-sm mt-1"
+                    className="font-mono text-sm"
                   />
                 </div>
               )}
@@ -206,17 +203,17 @@ export default function AddIntegrationPage() {
           </div>
         )}
         {testStatus === "err" && testError && (
-          <p className="text-sm text-red-600">{testError}</p>
+          <p className="text-sm text-error">{testError}</p>
         )}
         <div className="flex gap-2">
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={handleSave}
             disabled={!canSave || saveStatus === "loading" || testStatus === "loading"}
-            className="rounded bg-blue-600 text-white px-4 py-2 text-sm font-medium disabled:opacity-50 hover:bg-blue-700"
           >
             {saveStatus === "loading" || testStatus === "loading" ? "Zapisywanie…" : "Testuj i zapisz"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

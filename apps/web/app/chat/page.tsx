@@ -125,17 +125,17 @@ export default function ChatPage() {
     }
   };
 
-  if (!mounted) return <main className="p-4"><p>Ładowanie…</p></main>;
+  if (!mounted) return <main className="p-4"><p className="text-neutral-600">Ładowanie…</p></main>;
 
   return (
     <div className="flex h-screen">
-      <aside className="w-64 border-r flex flex-col">
-        <div className="p-2 border-b">
+      <aside className="w-64 border-r border-neutral-200 flex flex-col">
+        <div className="p-2 border-b border-neutral-200">
           <button
             type="button"
             onClick={handleNewConversation}
             disabled={loading}
-            className="w-full rounded bg-blue-600 text-white py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded bg-primary-600 text-white py-2 text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
           >
             Nowa rozmowa
           </button>
@@ -146,7 +146,7 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={() => setCurrentId(c.id)}
-                className={`w-full text-left px-3 py-2 rounded text-sm truncate ${currentId === c.id ? "bg-gray-200" : "hover:bg-gray-100"}`}
+                className={`w-full text-left px-3 py-2 rounded text-sm truncate ${currentId === c.id ? "bg-neutral-200" : "hover:bg-neutral-100"}`}
               >
                 {c.title || "Nowa rozmowa"}
               </button>
@@ -155,25 +155,25 @@ export default function ChatPage() {
         </ul>
       </aside>
       <main className="flex-1 flex flex-col min-w-0">
-        <div className="border-b p-2">
-          <h1 className="text-lg font-semibold">Chat</h1>
+        <div className="border-b border-neutral-200 p-2">
+          <h1 className="text-lg font-semibold text-neutral-800">Chat</h1>
         </div>
         <div className="flex-1 overflow-auto p-4 space-y-4">
           {messages.length === 0 && !currentId && (
-            <p className="text-gray-500">Rozpocznij nową rozmowę lub wybierz istniejącą z listy.</p>
+            <p className="text-neutral-500">Rozpocznij nową rozmowę lub wybierz istniejącą z listy.</p>
           )}
           {messages.map((m) => (
             <div key={m.id || m.created_at} className={m.role === "user" ? "text-right" : ""}>
-              <div className={`inline-block max-w-[85%] rounded-lg px-4 py-2 text-left ${m.role === "user" ? "bg-blue-100" : "bg-gray-100"}`}>
+              <div className={`inline-block max-w-[85%] rounded-lg px-4 py-2 text-left ${m.role === "user" ? "bg-primary-100" : "bg-neutral-100"}`}>
                 <p className="whitespace-pre-wrap">{m.content}</p>
                 {m.role === "assistant" && m.sources && m.sources.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-600 mb-1">Źródła</p>
+                  <div className="mt-3 pt-3 border-t border-neutral-200">
+                    <p className="text-xs font-medium text-neutral-600 mb-1">Źródła</p>
                     <ul className="text-sm space-y-1">
                       {m.sources.map((s) => (
                         <li key={s.id}>
                           {s.link ? (
-                            <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                               [{s.id}] {s.title}{s.unavailable ? " (niedostępne)" : ""}
                             </a>
                           ) : (
@@ -187,23 +187,23 @@ export default function ChatPage() {
               </div>
             </div>
           ))}
-          {loading && <p className="text-gray-500 text-sm">Asystent odpowiada…</p>}
+          {loading && <p className="text-neutral-500 text-sm">Asystent odpowiada…</p>}
         </div>
-        {error && <p className="px-4 py-2 text-sm text-red-600">{error}</p>}
-        <form onSubmit={handleSubmit} className="p-4 border-t">
+        {error && <p className="px-4 py-2 text-sm text-error">{error}</p>}
+        <form onSubmit={handleSubmit} className="p-4 border-t border-neutral-200">
           <div className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Zadaj pytanie…"
-              className="flex-1 border rounded px-3 py-2"
+              className="flex-1 border border-neutral-200 rounded px-3 py-2"
               disabled={loading}
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="rounded bg-blue-600 text-white px-4 py-2 font-medium disabled:opacity-50 hover:bg-blue-700"
+              className="rounded bg-primary-600 text-white px-4 py-2 font-medium disabled:opacity-50 hover:bg-primary-700"
             >
               Wyślij
             </button>
