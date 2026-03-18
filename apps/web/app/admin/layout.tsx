@@ -15,6 +15,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,7 +25,6 @@ export default function AdminLayout({
         router.replace("/login?redirect=/admin");
         return;
       }
-      // Role check: call API /api/v1/me to get role; if not tenant_admin redirect
       const token = session.access_token;
       try {
         const res = await apiFetch("/api/v1/me", { accessToken: token });
@@ -32,21 +32,47 @@ export default function AdminLayout({
           router.replace("/login?redirect=/admin");
           return;
         }
-        const data = await res.json();
-        if (data?.role === "tenant_admin") {
-          setRole("tenant_admin");
-        } else {
-          router.replace("/chat");
+        if (!res.ok) {
+          setApiError("Backend niedostępny. Sprawdź połączenie lub wdrożenie.");
+          setMounted(true);
+          return;
         }
+        const text = await res.text();
+        let data: { role?: string } = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          setApiError("Nieprawidłowa odpowiedź z API.");
+          setMounted(true);
+          return;
+        }
+        setRole(data?.role === "tenant_admin" ? "tenant_admin" : "end_user");
       } catch {
-        router.replace("/login?redirect=/admin");
+        setApiError("Nie można połączyć z backendem.");
       } finally {
         setMounted(true);
       }
     })();
   }, [router]);
 
-  if (!mounted || role !== "tenant_admin") {
+  if (!mounted) {
+    return (
+      <main className="p-4">
+        <p className="text-neutral-600">Ładowanie…</p>
+      </main>
+    );
+  }
+
+  if (apiError) {
+    return (
+      <main className="p-4">
+        <p className="text-error mb-2">{apiError}</p>
+        <a href="/chat" className="text-primary-600 hover:underline text-sm">Przejdź do chatu</a>
+      </main>
+    );
+  }
+
+  if (role === null) {
     return (
       <main className="p-4">
         <p className="text-neutral-600">Ładowanie…</p>
