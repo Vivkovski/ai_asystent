@@ -1,0 +1,9 @@
+[project]
+name = "connectors"
+version = "0.0.1"
+description = "Connector adapters (Bitrix, Google Drive, Google Sheets)"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.0"]
+
+[tool.uv]
+dev-dependencies = []

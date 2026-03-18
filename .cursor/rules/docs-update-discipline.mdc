@@ -1,0 +1,13 @@
+---
+description: Docs update discipline — when to update architecture and recommended steps
+globs: "docs/**/*","**/README.md"
+alwaysApply: false
+---
+
+# Docs update discipline
+
+- **When you change behaviour or structure:** Update the relevant doc. Examples: new flow (intent → sources → LLM) → `docs/architecture-and-product-brief.md`; new recommended phase or step → `docs/recommended-next-steps.md`; new app or package → root or app `README.md`.
+- **Architecture brief** (`docs/architecture-and-product-brief.md`): Keep the high-level diagram and data flow accurate. Add new integrations, new modules, or deployment options here when they become part of the design.
+- **Recommended next steps** (`docs/recommended-next-steps.md`): When a step is done or the order changes, update the list. Add new phases only when they are agreed (e.g. new integration wave, new tenant onboarding flow).
+- **README files:** Root README = project goal and how to run (when applicable). App READMEs = what the app does and how to run it. No need to duplicate full architecture in READMEs; link to `docs/` instead.
+- **Do not** leave docs outdated after a refactor or feature. Prefer a short, accurate note over a long, stale document.

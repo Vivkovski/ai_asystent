@@ -1,0 +1,11 @@
+---
+description: Plan before code — design or document before implementing
+alwaysApply: true
+---
+
+# Plan before code
+
+- **For non-trivial work:** Before writing implementation code, agree or document the approach: data shape, API contract, or flow. Use a short design note, an updated section in `docs/`, or a checklist. Prefer "intent → source list → adapter calls → LLM" written down before coding the pipeline.
+- **For API changes:** Define request/response shape and error cases (e.g. in docs or OpenAPI) before adding endpoints. Keep the contract stable so the frontend can rely on it.
+- **For new integrations:** Document the adapter contract (inputs, outputs, auth, limits, errors) and where it plugs into source selection before implementing. This avoids rework when orchestration expects a different format.
+- **Skip for:** Tiny fixes, typo corrections, or obvious one-line changes. Use judgment; when in doubt, a one-sentence plan is enough.

@@ -1,0 +1,12 @@
+---
+description: Monorepo boundaries — apps/web, apps/api, packages
+globs: "apps/**/*","packages/**/*"
+alwaysApply: false
+---
+
+# Monorepo boundaries
+
+- **apps/web** — Next.js only. UI, client-side state, calls to apps/api. No direct Supabase admin usage for backend-style operations (e.g. raw SQL, server-side integration secrets). Auth via Supabase client for session; API calls use the same session/token.
+- **apps/api** — FastAPI only. All external integrations (Bitrix, Google, etc.), LLM (Claude), and orchestration live here. No React/Next components or frontend build artifacts. Environment and secrets are server-side only.
+- **packages/** — Shared code only: types, constants, or small utilities used by both apps. No app-specific business logic. No direct DB or API client usage unless it is a truly shared SDK wrapper.
+- **Cross-app:** apps/web must not import from apps/api. apps/api must not import from apps/web. Shared contracts (e.g. API request/response shapes) can live in packages or be duplicated in each app with a single source of truth documented in docs.

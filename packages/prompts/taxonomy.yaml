@@ -1,0 +1,13 @@
+# Intent taxonomy for source routing.
+# Labels and short descriptions. Used by intent classification prompt and intent→source map.
+# Intent→source map is in packages/shared (INTENT_TO_SOURCES).
+
+labels:
+  - id: crm
+    description: "Deals, contacts, status, offers, client data (live CRM)."
+  - id: documents
+    description: "Procedures, files, documents (Drive, file storage)."
+  - id: spreadsheets
+    description: "Tables, sheets, numbers (Sheets, Excel-like)."
+  - id: mixed
+    description: "Clearly spans more than one (e.g. offer + document)."

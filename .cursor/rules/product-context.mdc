@@ -1,0 +1,14 @@
+---
+description: Product context — AI Assistant for companies, flow, and non-goals
+alwaysApply: true
+---
+
+# Product context
+
+This is an **AI Assistant for companies**: employees ask questions and get answers from **live data in connected systems** (CRM, drive, sheets), not from a manually maintained knowledge base.
+
+**Core flow:** user question → **intent recognition** → **source selection** (most likely sources only) → **query only those sources** → LLM builds answer **with cited sources**.
+
+**Not** a chatbot that searches everything every time. Design and implement **selective querying** and **routing-first** behaviour: route by intent, then query only selected sources.
+
+**Stack:** Next.js (frontend), FastAPI (backend), Supabase (db/auth/storage), Claude (first LLM). No n8n. Minimal infrastructure. Multi-tenant core; optional dedicated deployment per client. Connectors (e.g. Bitrix, Google Drive, Google Sheets) are configurable from the admin panel.

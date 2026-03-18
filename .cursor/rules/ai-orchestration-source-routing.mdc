@@ -1,0 +1,12 @@
+---
+description: AI orchestration — intent first, source selection, then query only selected sources
+globs: "apps/api/**/*","**/integrations/**/*","**/sources/**/*"
+alwaysApply: false
+---
+
+# AI orchestration and source routing
+
+- **Routing-first:** Decide *where* to look before fetching. Flow is: classify intent → resolve which sources apply → query only those sources → pass results to LLM for answer + citations. Never "query all sources and let the LLM sort it out" as the default design.
+- **Intent drives source selection.** Use a single place (e.g. intent taxonomy or mapping) that maps intent categories to source identifiers. Source selection must be deterministic or explicitly model-based; document the rule set.
+- **Adapters are stateless.** Each connector (Bitrix, Google Drive, Google Sheets) implements a clear contract: input (query context, tenant config, limits), output (list of fragments + source metadata). No cross-adapter state; orchestration layer combines results.
+- **Cite sources.** Every answer that uses data from sources must include source references (e.g. type, id, title, link). The API response shape should include both `answer` and `sources`; the frontend must display sources.

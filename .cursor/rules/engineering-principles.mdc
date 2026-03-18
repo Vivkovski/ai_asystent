@@ -1,0 +1,11 @@
+---
+description: Engineering principles — simplicity, boundaries, no n8n
+alwaysApply: true
+---
+
+# Engineering principles
+
+- **Minimal infrastructure.** Prefer managed services (Supabase, Vercel, etc.) over custom ops. No n8n or external workflow engines; orchestration lives in application code (FastAPI).
+- **Clear boundaries.** Frontend calls backend API only; backend owns business logic, integrations, and LLM calls. Do not put backend secrets or integration credentials in the frontend.
+- **One concern per module.** Keep intent logic, source selection, adapters, and answer synthesis as separate, testable units. Avoid god-objects that do routing, fetching, and LLM in one blob.
+- **Fail clearly.** On adapter or LLM errors, return a structured error to the client (e.g. type + message); do not swallow or mask failures. Log enough context for debugging (tenant id, request id, source name) without logging secrets or full request bodies.
