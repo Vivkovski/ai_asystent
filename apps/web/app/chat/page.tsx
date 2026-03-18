@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 
 type Conversation = { id: string; title: string | null; created_at: string; updated_at: string };
@@ -151,6 +152,14 @@ export default function ChatPage() {
             </li>
           ))}
         </ul>
+        <div className="border-t border-neutral-200 p-2 flex flex-col gap-1">
+          <Link href="/admin" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100">
+            Panel
+          </Link>
+          <Link href="/admin/integrations" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100">
+            Integracje
+          </Link>
+        </div>
       </aside>
       <main className="flex-1 flex flex-col min-w-0">
         <div className="border-b border-neutral-200 p-2">
