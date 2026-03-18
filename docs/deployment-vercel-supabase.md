@@ -1,11 +1,12 @@
 # Wdrożenie: Vercel (jeden projekt: frontend + backend) + Supabase
 
-**Jedna aplikacja Vercel** — projekt **web** serwuje i Next.js, i FastAPI z tego samego repo:
+**Jedna aplikacja Vercel** — projekt **flixhome-asystent** serwuje Next.js i FastAPI z tego samego repo:
 - **Root Directory:** brak (repo root).
 - **Next.js** — build z `apps/web`, output `apps/web/.next`.
 - **Backend** — FastAPI pod ścieżką `/api/backend` (plik `api/backend.py` w root repo, mount aplikacji z `apps/api`).
+- **GitHub:** repo podlinkowane — push na `main` uruchamia deploy.
 
-Projekt **api** na Vercel możesz usunąć (Settings → Delete Project); backend działa w projekcie **web**.
+Production: **https://flixhome-asystent.vercel.app** (backend: `/api/backend/health`, `/api/backend/api/v1/...`).
 
 ---
 
@@ -23,8 +24,8 @@ Projekt **api** na Vercel możesz usunąć (Settings → Delete Project); backen
 
 ## 2. Vercel — frontend (Next.js)
 
-1. **Jeden projekt Vercel „web”** — Root Directory = repo root (pusty). Build i output ustawione w `vercel.json` w repo (buildCommand, outputDirectory).
-2. **Backend w tym samym projekcie** — w root repo jest `api/backend.py` i `requirements.txt`; Vercel buduje funkcję Pythona i serwuje ją pod `/api/backend/*`.
+1. **Projekt Vercel „flixhome-asystent”** — Root Directory = repo root. Build i output ustawione w projekcie (buildCommand, outputDirectory). Repo GitHub podlinkowane.
+2. **Backend w tym samym projekcie** — w root repo jest `api/backend.py` i `requirements.txt`; Vercel buduje funkcję Pythona pod `/api/backend/*`.
 3. **Environment Variables** — patrz sekcje 3 i 4 (Supabase + backend). Dla frontu: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Przy jednym projekcie **nie** ustawiaj `NEXT_PUBLIC_API_URL`.
 4. Deploy. Production URL (np. `https://web-eight-peach-23.vercel.app`) użyj w Google OAuth redirect URI.
 
@@ -48,10 +49,10 @@ Skrypt wypisze m.in.:
 
 ## 4. Zmienne dla backendu (w tym samym projekcie „web”)
 
-Backend (FastAPI pod `/api/backend`) działa w projekcie **web**. Ustaw w Vercel → Project **web** → Settings → Environment Variables (te same co wcześniej dla API):
+Backend (FastAPI pod `/api/backend`) działa w projekcie **flixhome-asystent**. Ustaw w Vercel → Project **flixhome-asystent** → Settings → Environment Variables:
 
 - `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `ENCRYPTION_KEY`
-- opcjonalnie: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` (np. `https://web-eight-peach-23.vercel.app/admin/integrations/google/callback`)
+- opcjonalnie: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` (np. `https://flixhome-asystent.vercel.app/admin/integrations/google/callback`)
 
 Te zmienne są używane przez funkcję Pythona `api/backend.py`.
 
@@ -73,7 +74,7 @@ Te zmienne są używane przez funkcję Pythona `api/backend.py`.
 | Gdzie        | Co ustawić |
 |-------------|------------|
 | Supabase    | Migracje, URL, anon key, service_role, JWT Secret |
-| Vercel (jeden projekt „web”) | NEXT_PUBLIC_SUPABASE_*, NEXT_PUBLIC_SUPABASE_ANON_KEY; backend: SUPABASE_*, ENCRYPTION_KEY, GOOGLE_* (w tym samym projekcie) |
-| Google Cloud | Authorized redirect URI = np. `https://<twoja-domena>.vercel.app/admin/integrations/google/callback` |
+| Vercel (projekt **flixhome-asystent**) | NEXT_PUBLIC_SUPABASE_*, NEXT_PUBLIC_SUPABASE_ANON_KEY; backend: SUPABASE_*, ENCRYPTION_KEY, GOOGLE_* |
+| Google Cloud | Authorized redirect URI = `https://flixhome-asystent.vercel.app/admin/integrations/google/callback` |
 
 Po pierwszym deployu sprawdź: logowanie na stronie (Supabase Auth), lista integracji, „Zaloguj się przez Google” (redirect URI musi się zgadzać).
