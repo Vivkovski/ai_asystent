@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button, Input, Label, PageTitle } from "@/components/ui";
 
@@ -17,8 +17,13 @@ const GOOGLE_OAUTH_PENDING_KEY = "google_oauth_pending";
 
 export default function AddIntegrationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const typeFromUrl = searchParams.get("type");
   const [token, setToken] = useState<string | null>(null);
-  const [type, setType] = useState("bitrix");
+  const [type, setType] = useState(() => {
+    if (typeFromUrl && TYPES.some((t) => t.id === typeFromUrl)) return typeFromUrl;
+    return "bitrix";
+  });
   const [webhookUrl, setWebhookUrl] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -35,6 +40,10 @@ export default function AddIntegrationPage() {
       if (session) setToken(session.access_token);
     });
   }, []);
+
+  useEffect(() => {
+    if (typeFromUrl && TYPES.some((t) => t.id === typeFromUrl)) setType(typeFromUrl);
+  }, [typeFromUrl]);
 
   const credentials =
     type === "bitrix"

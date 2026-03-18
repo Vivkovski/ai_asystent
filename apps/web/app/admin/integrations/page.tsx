@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Badge, Button, PageTitle } from "@/components/ui";
+import { Badge, Card, PageTitle } from "@/components/ui";
 
 type Integration = {
   id: string;
@@ -22,6 +22,12 @@ const TYPE_LABELS: Record<string, string> = {
   google_drive: "Google Drive",
   google_sheets: "Google Sheets",
 };
+
+const AVAILABLE_TYPES = [
+  { id: "bitrix", label: "Bitrix24", description: "CRM, kontakty, zadania i dokumenty z Bitrix24." },
+  { id: "google_drive", label: "Google Drive", description: "Pliki i foldery z Dysku Google." },
+  { id: "google_sheets", label: "Google Sheets", description: "Arkusze i dane z Google Sheets." },
+] as const;
 
 export default function AdminIntegrationsPage() {
   const [items, setItems] = useState<Integration[]>([]);
@@ -58,18 +64,44 @@ export default function AdminIntegrationsPage() {
     return "success";
   };
 
+  const countByType = (type: string) => items.filter((i) => i.type === type).length;
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <PageTitle title="Integracje" />
-        <Link href="/admin/integrations/add">
-          <Button variant="primary" size="md">
-            Dodaj integrację
-          </Button>
-        </Link>
-      </div>
+      <PageTitle
+        title="Integracje"
+        description="Podłącz źródła danych, z których asystent będzie korzystał w odpowiedziach."
+      />
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-neutral-800 mb-3">Dostępne integracje</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {AVAILABLE_TYPES.map((t) => {
+            const added = countByType(t.id);
+            return (
+              <Link key={t.id} href={`/admin/integrations/add?type=${t.id}`} className="block">
+                <Card className="p-4 h-full hover:border-primary-400 hover:shadow-sm transition-all">
+                  <h3 className="font-semibold text-neutral-800">{t.label}</h3>
+                  <p className="mt-1 text-sm text-neutral-600">{t.description}</p>
+                  <p className="mt-3 text-sm text-neutral-500">
+                    {added > 0 ? (
+                      <span className="text-primary-600">{added} {added === 1 ? "dodana" : "dodane"}</span>
+                    ) : (
+                      "Nie dodano"
+                    )}
+                  </p>
+                  <span className="mt-2 inline-block text-primary-600 text-sm font-medium">
+                    {added > 0 ? "Dodaj kolejną" : "Dodaj integrację"} →
+                  </span>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+      <section>
+        <h2 className="text-lg font-semibold text-neutral-800 mb-3">Twoje integracje</h2>
       {items.length === 0 ? (
-        <p className="text-neutral-600">Brak integracji. Dodaj pierwszą, aby asystent mógł korzystać z danych.</p>
+        <p className="text-neutral-600">Brak dodanych integracji. Wybierz kafelek powyżej, aby dodać pierwszą.</p>
       ) : (
         <table className="w-full border-collapse border border-neutral-200">
           <thead>
@@ -108,6 +140,7 @@ export default function AdminIntegrationsPage() {
           </tbody>
         </table>
       )}
+      </section>
     </div>
   );
 }
