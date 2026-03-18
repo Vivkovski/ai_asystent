@@ -15,6 +15,9 @@ from fastapi import FastAPI
 
 from main import app as api_app
 
+# Na Vercel request path to często ścieżka względna (np. /api/v1/...), bez prefiksu /api/backend.
+# Montujemy api_app w dwóch miejscach: pod "/" (dla Vercel) i pod "/api/backend" (dla local/proxy).
 parent = FastAPI(title="API Gateway")
 parent.mount("/api/backend", api_app)
+parent.mount("/", api_app)
 app = parent

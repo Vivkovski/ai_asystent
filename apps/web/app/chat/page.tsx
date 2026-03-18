@@ -75,13 +75,26 @@ export default function ChatPage() {
       accessToken: token,
       body: JSON.stringify({}),
     })
-      .then((r) => r.json())
-      .then((conv: Conversation) => {
+      .then(async (r) => {
+        if (!r.ok) {
+          const text = await r.text();
+          let msg = r.statusText;
+          try {
+            const j = JSON.parse(text);
+            if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+          } catch {
+            if (r.status === 404) msg = "Backend niedostępny (404). Sprawdź wdrożenie.";
+          }
+          throw new Error(msg);
+        }
+        return r.json() as Promise<Conversation>;
+      })
+      .then((conv) => {
         setCurrentId(conv.id);
         setConversations((prev) => [conv, ...prev]);
         setMessages([]);
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => setError(e instanceof Error ? e.message : "Wystąpił błąd"))
       .finally(() => setLoading(false));
   };
 
@@ -96,7 +109,20 @@ export default function ChatPage() {
         accessToken: token,
         body: JSON.stringify({}),
       });
-      const conv = await r.json();
+      if (!r.ok) {
+        const text = await r.text();
+        let msg = r.statusText;
+        try {
+          const j = JSON.parse(text);
+          if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+        } catch {
+          if (r.status === 404) msg = "Backend niedostępny (404). Sprawdź wdrożenie.";
+        }
+        setError(msg);
+        setLoading(false);
+        return;
+      }
+      const conv = await r.json() as Conversation;
       convId = conv.id;
       setCurrentId(convId);
       setConversations((prev) => [conv, ...prev]);
