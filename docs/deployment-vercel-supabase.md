@@ -1,9 +1,9 @@
-# Wdrożenie: Vercel (frontend) + Supabase + backend
+# Wdrożenie: Vercel (frontend + backend) + Supabase
 
-Projekt ma trzy części do wdrożenia:
-1. **Supabase** — baza, auth, migracje (już masz projekt).
-2. **Backend API** — FastAPI (Vercel Serverless, Railway, Render, lub inny host z Pythonem).
-3. **Frontend** — Next.js na **Vercel**.
+Projekt ma dwie części na Vercel i jedną w Supabase:
+1. **Supabase** — baza, auth, migracje (projekt połączony przez `supabase link`, migracje wdrożone).
+2. **Frontend** — Next.js w projekcie Vercel **web** (Root Directory: `apps/web`).
+3. **Backend API** — FastAPI w projekcie Vercel **api** (Root Directory: `apps/api`, framework: FastAPI).
 
 ---
 
@@ -37,25 +37,42 @@ Projekt ma trzy części do wdrożenia:
 
 ---
 
-## 3. Backend API (FastAPI)
+## 3. Wartości zmiennych z Supabase (CLI)
 
-Vercel może hostować też API (Vercel Serverless Functions), ale typowy wybór to osobny host pod Python:
+Z głównego katalogu repo uruchom:
 
-- **Railway** — dodaj projekt z GitHub, wybierz katalog `apps/api`, ustaw start: `uv run uvicorn main:app --host 0.0.0.0` (i np. `uv sync` w build). Dodaj zmienne środowiskowe (patrz runbook).
-- **Render** — Web Service, build: `cd apps/api && uv sync`, start: `uvicorn main:app --host 0.0.0.0`.
-- **Inne** — dowolny host z Python 3.11+ (np. Fly.io, Cloud Run).
+```bash
+./scripts/supabase-env-for-vercel.sh
+```
 
-**Zmienne środowiskowe backendu** (np. na Railway/Render):
-- `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `ENCRYPTION_KEY`
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- **`GOOGLE_OAUTH_REDIRECT_URI`** = **pełny URL strony callback w Vercel**, np.  
-  `https://twoja-app.vercel.app/admin/integrations/google/callback`
+Skrypt wypisze m.in.:
+- **Web:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Backend:** `SUPABASE_URL`, `SUPABASE_KEY` (service_role)
 
-W **Google Cloud Console** w Authorized redirect URIs dodaj dokładnie ten sam URL.
+**JWT Secret** weź ręcznie z Supabase Dashboard → Project Settings → API → JWT Secret (potrzebny do weryfikacji tokenów na backendzie).
 
 ---
 
-## 4. Kolejność
+## 4. Backend API (FastAPI) na Vercel
+
+Projekt Vercel **api** jest już utworzony (Root Directory: `apps/api`, framework: FastAPI). Adres produkcji: **https://api-sigma-eosin.vercel.app** (alias).
+
+**Zmienne środowiskowe** — ustaw w Vercel → Project **api** → Settings → Environment Variables:
+
+- `SUPABASE_URL` — z outputu skryptu `./scripts/supabase-env-for-vercel.sh`
+- `SUPABASE_KEY` — service_role z tego samego skryptu
+- `SUPABASE_JWT_SECRET` — z Dashboard Supabase → API → JWT Secret
+- `ENCRYPTION_KEY` — min. 32 znaki (np. `openssl rand -base64 32`)
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — jeśli używasz „Zaloguj przez Google”
+- **`GOOGLE_OAUTH_REDIRECT_URI`** = `https://web-eight-peach-23.vercel.app/admin/integrations/google/callback` (lub aktualny URL frontu)
+
+Po ustawieniu zmiennych zrób **Redeploy** projektu **api** w Vercel (Deployments → … → Redeploy).
+
+**Frontend** — w projekcie **web** ustaw `NEXT_PUBLIC_API_URL=https://api-sigma-eosin.vercel.app`.
+
+---
+
+## 5. Kolejność
 
 1. Supabase: projekt, migracje, seed (opcjonalnie).
 2. Backend: wdrożyć, skopiować URL API.
@@ -65,7 +82,7 @@ W **Google Cloud Console** w Authorized redirect URIs dodaj dokładnie ten sam U
 
 ---
 
-## 5. Szybki checklist
+## 6. Szybki checklist
 
 | Gdzie        | Co ustawić |
 |-------------|------------|
