@@ -1,0 +1,9 @@
+# For Vercel / pip install; full deps also in pyproject.toml
+fastapi>=0.115.0
+pyjwt>=2.8.0
+python-multipart>=0.0.9
+supabase>=2.10.0
+pydantic-settings>=2.0.0
+google-auth>=2.0
+google-api-python-client>=2.100
+httpx>=0.27.0

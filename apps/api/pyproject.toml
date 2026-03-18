@@ -4,6 +4,9 @@ version = "0.0.1"
 description = "FastAPI backend for AI Assistant"
 readme = "README.md"
 requires-python = ">=3.11"
+# Vercel Python runtime: entrypoint for FastAPI app
+[project.scripts]
+app = "main:app"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
