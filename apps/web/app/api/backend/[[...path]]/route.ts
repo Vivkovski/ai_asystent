@@ -62,10 +62,9 @@ async function proxy(
   const init: RequestInit = {
     method: request.method,
     headers,
-    duplex: "half",
   };
   if (request.body != null && ["POST", "PUT", "PATCH"].includes(request.method)) {
-    init.body = request.body;
+    init.body = await request.arrayBuffer();
   }
 
   try {
