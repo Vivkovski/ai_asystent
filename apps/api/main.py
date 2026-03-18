@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from api.v1 import me
 from api.v1.admin import integrations as admin_integrations
+from api.v1.admin import google_oauth as admin_google_oauth
 from api.v1 import conversations
 from api.v1 import messages
 from api.errors import global_exception_handler, openrouter_exception_handler
@@ -40,6 +41,7 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(me.router, prefix="/api/v1")
 app.include_router(admin_integrations.router, prefix="/api/v1")
+app.include_router(admin_google_oauth.router, prefix="/api/v1")
 app.include_router(conversations.router, prefix="/api/v1")
 app.include_router(messages.router, prefix="/api/v1")
 

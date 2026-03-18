@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     # Google OAuth (Drive, Sheets): app-level
     google_client_id: str = ""
     google_client_secret: str = ""
+    # Redirect URI after Google sign-in (frontend callback page). Must match Google Cloud Console.
+    google_oauth_redirect_uri: str = ""
 
     # OpenRouter (LLM: intent + answer synthesis); model chosen at openrouter.ai
     openrouter_api_key: str = ""

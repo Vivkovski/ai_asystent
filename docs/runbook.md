@@ -56,6 +56,7 @@
 | `ENCRYPTION_KEY` | Tak | Min. 32 znaki — do szyfrowania credentials integracji (np. `openssl rand -base64 32`) |
 | `GOOGLE_CLIENT_ID` | Dla Drive/Sheets | Client ID z Google Cloud Console (OAuth 2.0) |
 | `GOOGLE_CLIENT_SECRET` | Dla Drive/Sheets | Client Secret z Google Cloud Console |
+| `GOOGLE_OAUTH_REDIRECT_URI` | Dla „Zaloguj przez Google” | Dokładnie ten sam URL co w Google Cloud Console → Authorized redirect URIs, np. `http://localhost:3000/admin/integrations/google/callback` (dev) lub `https://twoja-domena.com/admin/integrations/google/callback` (prod) |
 | `OPENROUTER_API_KEY` | Dla LLM (intent + synthesis) | API key z [openrouter.ai](https://openrouter.ai); bez klucza używany jest MockLLM |
 | `OPENROUTER_MODEL` | Nie | Model w OpenRouter (np. `openai/gpt-4o-mini`, `anthropic/claude-3.5-sonnet`); domyślnie `openai/gpt-4o-mini` |
 
@@ -81,4 +82,4 @@
 
 - **401 na /api/v1/me** — sprawdź `SUPABASE_JWT_SECRET` (musi być JWT Secret z Dashboard).
 - **Encryption failed przy dodawaniu integracji** — ustaw `ENCRYPTION_KEY` (min. 32 znaki).
-- **Google Drive: „refresh_token required”** — dodaj integrację z refresh tokenem (np. z OAuth Playground); backend musi mieć `GOOGLE_CLIENT_ID` i `GOOGLE_CLIENT_SECRET`.
+- **Google Drive: „refresh_token required”** — użyj przycisku „Zaloguj się przez Google” w adminie (wymaga `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`). W Google Cloud Console dodaj w Authorized redirect URIs dokładnie ten sam URL co `GOOGLE_OAUTH_REDIRECT_URI`.
