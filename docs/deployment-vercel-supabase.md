@@ -1,9 +1,11 @@
-# Wdrożenie: Vercel (frontend + backend) + Supabase
+# Wdrożenie: Vercel (jeden projekt: frontend + backend) + Supabase
 
-Projekt ma dwie części na Vercel i jedną w Supabase:
-1. **Supabase** — baza, auth, migracje (projekt połączony przez `supabase link`, migracje wdrożone).
-2. **Frontend** — Next.js w projekcie Vercel **web** (Root Directory: `apps/web`).
-3. **Backend API** — FastAPI w projekcie Vercel **api** (Root Directory: `apps/api`, framework: FastAPI).
+**Jedna aplikacja Vercel** — projekt **web** serwuje i Next.js, i FastAPI z tego samego repo:
+- **Root Directory:** brak (repo root).
+- **Next.js** — build z `apps/web`, output `apps/web/.next`.
+- **Backend** — FastAPI pod ścieżką `/api/backend` (plik `api/backend.py` w root repo, mount aplikacji z `apps/api`).
+
+Projekt **api** na Vercel możesz usunąć (Settings → Delete Project); backend działa w projekcie **web**.
 
 ---
 
@@ -21,19 +23,10 @@ Projekt ma dwie części na Vercel i jedną w Supabase:
 
 ## 2. Vercel — frontend (Next.js)
 
-1. [Vercel](https://vercel.com) → Add New Project → Import z repozytorium GitHub `Vivkovski/ai_asystent` (albo użyj istniejącego projektu **web** po `vercel link`).
-2. **Root Directory (obowiązkowe):** w projekcie wejdź w **Settings → General** i w polu **Root Directory** ustaw **`apps/web`**. Zapisz. Dzięki temu Vercel buduje z tego katalogu, a `pnpm install` w `apps/web` i tak widzi workspace (pnpm-workspace.yaml w głównym repo).
-   - **Install Command:** domyślne `pnpm install`.
-   - **Build Command:** domyślne `pnpm run build` (Next.js).
-   - Bez ustawienia Root Directory build się nie uda (brak Next.js w root).
-   - Link do ustawień (podmień team/project): `https://vercel.com/pawels-projects-f1177721/web/settings`
-3. **Environment Variables** w Vercel (dla aplikacji web):
-   - `NEXT_PUBLIC_SUPABASE_URL` = URL projektu Supabase
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon key
-   - `NEXT_PUBLIC_API_URL` = **URL twojego backendu API** (np. `https://twoj-api.railway.app` lub gdzie hostujesz FastAPI)
-4. Deploy. Po wdrożeniu skopiuj **Production URL** (np. `https://ai-asystent.vercel.app`) — przyda się do redirect URI i do API.
-
-**Uwaga (monorepo):** Jeśli root repozytorium to nie `apps/web`, w Vercel w **Root Directory** ustaw `apps/web`. Wtedy Install Command zostaw domyślny (Vercel wykryje pnpm jeśli jest `pnpm-lock.yaml` w repo root; może być potrzebny root = repo i w `apps/web` nie ma osobnego lockfile, więc Install w repo root: `pnpm install`, Build: `pnpm --filter web build`). Sprawdź w dokumentacji Vercel „Monorepo”.
+1. **Jeden projekt Vercel „web”** — Root Directory = repo root (pusty). Build i output ustawione w `vercel.json` w repo (buildCommand, outputDirectory).
+2. **Backend w tym samym projekcie** — w root repo jest `api/backend.py` i `requirements.txt`; Vercel buduje funkcję Pythona i serwuje ją pod `/api/backend/*`.
+3. **Environment Variables** — patrz sekcje 3 i 4 (Supabase + backend). Dla frontu: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Przy jednym projekcie **nie** ustawiaj `NEXT_PUBLIC_API_URL`.
+4. Deploy. Production URL (np. `https://web-eight-peach-23.vercel.app`) użyj w Google OAuth redirect URI.
 
 ---
 
@@ -53,32 +46,25 @@ Skrypt wypisze m.in.:
 
 ---
 
-## 4. Backend API (FastAPI) na Vercel
+## 4. Zmienne dla backendu (w tym samym projekcie „web”)
 
-Projekt Vercel **api** jest już utworzony (Root Directory: `apps/api`, framework: FastAPI). Adres produkcji: **https://api-sigma-eosin.vercel.app** (alias).
+Backend (FastAPI pod `/api/backend`) działa w projekcie **web**. Ustaw w Vercel → Project **web** → Settings → Environment Variables (te same co wcześniej dla API):
 
-**Zmienne środowiskowe** — ustaw w Vercel → Project **api** → Settings → Environment Variables:
+- `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET`, `ENCRYPTION_KEY`
+- opcjonalnie: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` (np. `https://web-eight-peach-23.vercel.app/admin/integrations/google/callback`)
 
-- `SUPABASE_URL` — z outputu skryptu `./scripts/supabase-env-for-vercel.sh`
-- `SUPABASE_KEY` — service_role z tego samego skryptu
-- `SUPABASE_JWT_SECRET` — z Dashboard Supabase → API → JWT Secret
-- `ENCRYPTION_KEY` — min. 32 znaki (np. `openssl rand -base64 32`)
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — jeśli używasz „Zaloguj przez Google”
-- **`GOOGLE_OAUTH_REDIRECT_URI`** = `https://web-eight-peach-23.vercel.app/admin/integrations/google/callback` (lub aktualny URL frontu)
+Te zmienne są używane przez funkcję Pythona `api/backend.py`.
 
-Po ustawieniu zmiennych zrób **Redeploy** projektu **api** w Vercel (Deployments → … → Redeploy).
-
-**Frontend** — w projekcie **web** ustaw `NEXT_PUBLIC_API_URL=https://api-sigma-eosin.vercel.app`.
+**Frontend:** przy jednym projekcie **nie ustawiaj** `NEXT_PUBLIC_API_URL` — wtedy front używa tego samego hosta i ścieżki `/api/backend`. Jeśli API jest osobno (np. drugi projekt), ustaw `NEXT_PUBLIC_API_URL` na URL tego API.
 
 ---
 
 ## 5. Kolejność
 
 1. Supabase: projekt, migracje, seed (opcjonalnie).
-2. Backend: wdrożyć, skopiować URL API.
-3. Vercel: wdrożyć frontend z `NEXT_PUBLIC_API_URL` = URL backendu.
-4. Ustawić `GOOGLE_OAUTH_REDIRECT_URI` na backendzie na production URL callback (Vercel).
-5. W Google Cloud dodać ten redirect URI do OAuth clienta.
+2. Vercel: jeden projekt „web”, deploy z repo (build + Python z `vercel.json`).
+3. Zmienne: Supabase + backend w ustawieniach projektu „web”.
+4. Google OAuth: redirect URI = `https://<twoja-domena>.vercel.app/admin/integrations/google/callback`.
 
 ---
 
@@ -87,8 +73,7 @@ Po ustawieniu zmiennych zrób **Redeploy** projektu **api** w Vercel (Deployment
 | Gdzie        | Co ustawić |
 |-------------|------------|
 | Supabase    | Migracje, URL, anon key, service_role, JWT Secret |
-| Vercel (Web) | Root = `apps/web` (lub monorepo build), NEXT_PUBLIC_SUPABASE_*, NEXT_PUBLIC_API_URL |
-| Backend     | SUPABASE_*, ENCRYPTION_KEY, GOOGLE_*, GOOGLE_OAUTH_REDIRECT_URI = Vercel callback URL |
-| Google Cloud | Authorized redirect URI = ten sam co GOOGLE_OAUTH_REDIRECT_URI |
+| Vercel (jeden projekt „web”) | NEXT_PUBLIC_SUPABASE_*, NEXT_PUBLIC_SUPABASE_ANON_KEY; backend: SUPABASE_*, ENCRYPTION_KEY, GOOGLE_* (w tym samym projekcie) |
+| Google Cloud | Authorized redirect URI = np. `https://<twoja-domena>.vercel.app/admin/integrations/google/callback` |
 
 Po pierwszym deployu sprawdź: logowanie na stronie (Supabase Auth), lista integracji, „Zaloguj się przez Google” (redirect URI musi się zgadzać).

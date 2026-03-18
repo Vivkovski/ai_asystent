@@ -2,7 +2,7 @@
   "name": "flixhome-asystent",
   "private": true,
   "scripts": {
-    "build": "pnpm --filter web build && pnpm --filter @repo/shared build",
+    "build": "pnpm --filter @repo/shared build && pnpm --filter web build",
     "dev:web": "pnpm --filter @repo/shared build && pnpm --filter web dev",
     "dev:api": "cd apps/api && uv run uvicorn main:app --reload",
     "dev": "pnpm run dev:web"
@@ -10,5 +10,8 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "pnpm@9.14.2"
+  "packageManager": "pnpm@9.14.2",
+  "devDependencies": {
+    "next": "15.5.13"
+  }
 }
