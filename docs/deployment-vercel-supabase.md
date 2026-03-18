@@ -21,10 +21,12 @@ Projekt ma trzy części do wdrożenia:
 
 ## 2. Vercel — frontend (Next.js)
 
-1. [Vercel](https://vercel.com) → Add New Project → Import z repozytorium GitHub `Vivkovski/ai_asystent`.
-2. **Root Directory:** ustaw na **`apps/web`**. Vercel wejdzie w ten katalog; `pnpm install` (z katalogu `apps/web`) i tak użyje workspace z głównego repo, więc zależność `@repo/shared` się zbuduje.
-   - **Install Command:** `pnpm install` (domyślne).
-   - **Build Command:** `pnpm run build` (uruchomi `next build`).
+1. [Vercel](https://vercel.com) → Add New Project → Import z repozytorium GitHub `Vivkovski/ai_asystent` (albo użyj istniejącego projektu **web** po `vercel link`).
+2. **Root Directory (obowiązkowe):** w projekcie wejdź w **Settings → General** i w polu **Root Directory** ustaw **`apps/web`**. Zapisz. Dzięki temu Vercel buduje z tego katalogu, a `pnpm install` w `apps/web` i tak widzi workspace (pnpm-workspace.yaml w głównym repo).
+   - **Install Command:** domyślne `pnpm install`.
+   - **Build Command:** domyślne `pnpm run build` (Next.js).
+   - Bez ustawienia Root Directory build się nie uda (brak Next.js w root).
+   - Link do ustawień (podmień team/project): `https://vercel.com/pawels-projects-f1177721/web/settings`
 3. **Environment Variables** w Vercel (dla aplikacji web):
    - `NEXT_PUBLIC_SUPABASE_URL` = URL projektu Supabase
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon key
