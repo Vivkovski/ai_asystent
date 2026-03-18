@@ -29,7 +29,10 @@ export default function AdminLayout({
       try {
         const res = await apiFetch("/api/v1/me", { accessToken: token });
         if (res.status === 401) {
-          router.replace("/login?redirect=/admin");
+          setApiError(
+            "Backend zwrócił 401 (brak profilu lub błędna konfiguracja JWT). Upewnij się, że w Vercel ustawiono SUPABASE_JWT_SECRET i że użytkownik ma wpis w tabeli profiles."
+          );
+          setMounted(true);
           return;
         }
         if (!res.ok) {

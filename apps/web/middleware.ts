@@ -47,7 +47,11 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthPage && session) {
     const url = request.nextUrl.clone();
-    url.pathname = "/chat";
+    const redirectTo = url.searchParams.get("redirect");
+    url.pathname =
+      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+        ? redirectTo
+        : "/chat";
     url.searchParams.delete("redirect");
     return NextResponse.redirect(url);
   }
