@@ -35,7 +35,8 @@ const BEARER_PREFIX = "Bearer ";
 
 async function fetchJwks(): Promise<jose.JSONWebKeySet> {
   const base = process.env.SUPABASE_URL?.replace(/\/$/, "");
-  const key = process.env.SUPABASE_KEY;
+  const key =
+    process.env.SUPABASE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!base || !key) throw new Error("SUPABASE_URL/SUPABASE_KEY not set");
   const res = await fetch(`${base}/auth/v1/.well-known/jwks.json`, {
     headers: { apikey: key },

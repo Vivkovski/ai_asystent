@@ -32,7 +32,13 @@ export async function createConversation(
     })
     .select()
     .single();
-  if (error || !data) throw new Error("Insert failed");
+  if (error || !data) {
+    console.error("[chat] createConversation failed:", error?.message ?? "no data", {
+      code: error?.code,
+      details: error?.details,
+    });
+    throw new Error(error?.message ?? "Insert failed");
+  }
   return serialize(data as Record<string, unknown>);
 }
 

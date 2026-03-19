@@ -39,7 +39,11 @@ export default function AdminIntegrationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch("/api/v1/admin/integrations", { accessToken });
+      const res = await apiFetch("/api/v1/admin/integrations", {
+        accessToken,
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+      });
       if (!res.ok) throw new Error(res.statusText);
       const data = await res.json() as { items?: Integration[] };
       setItems(data.items ?? []);
@@ -69,12 +73,12 @@ export default function AdminIntegrationsPage() {
     return () => window.removeEventListener("focus", onFocus);
   }, [token, fetchIntegrations]);
 
-  // Po przekierowaniu z OAuth (?added=...) odśwież listę po chwili (na wypadek opóźnienia zapisu)
+  // Po przekierowaniu z OAuth (?added=...) odśwież listę (świeża odpowiedź, bez cache)
   useEffect(() => {
     if (!token || typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (!params.has("added")) return;
-    const t = setTimeout(() => fetchIntegrations(token), 600);
+    const t = setTimeout(() => fetchIntegrations(token), 800);
     return () => clearTimeout(t);
   }, [token, fetchIntegrations]);
 

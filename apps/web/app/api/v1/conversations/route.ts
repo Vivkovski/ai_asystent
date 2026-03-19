@@ -28,10 +28,19 @@ export async function POST(request: NextRequest) {
   } catch {
     // optional body
   }
-  const conv = await chatDomain.createConversation(
-    context.tenantId,
-    context.userId,
-    body.title ?? null
-  );
-  return NextResponse.json(conv);
+  try {
+    const conv = await chatDomain.createConversation(
+      context.tenantId,
+      context.userId,
+      body.title ?? null
+    );
+    return NextResponse.json(conv);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Wystąpił błąd";
+    console.error("[conversations POST]", message, err);
+    return NextResponse.json(
+      { code: "INTERNAL_ERROR", message: "Nie udało się utworzyć rozmowy. Spróbuj ponownie." },
+      { status: 500 }
+    );
+  }
 }

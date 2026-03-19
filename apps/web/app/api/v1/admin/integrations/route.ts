@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
   const forbidden = requireAdmin(context);
   if (forbidden) return forbidden.response;
   const items = await integrationsDomain.listIntegrations(context.tenantId);
-  return NextResponse.json({ items });
+  return NextResponse.json({ items }, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      Pragma: "no-cache",
+    },
+  });
 }
 
 export async function POST(request: NextRequest) {
