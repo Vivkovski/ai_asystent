@@ -5,8 +5,8 @@ Uruchamiane z roota repo; import z apps.api.
 import sys
 from pathlib import Path
 
-# apps/api w repo
-_root = Path(__file__).resolve().parent
+# repo root = parent katalogu api/
+_root = Path(__file__).resolve().parent.parent
 _api = _root / "apps" / "api"
 if str(_api) not in sys.path:
     sys.path.insert(0, str(_api))
