@@ -9,6 +9,17 @@ export async function GET(request: NextRequest) {
   const { context } = result;
   const forbidden = requireAdmin(context);
   if (forbidden) return forbidden.response;
+  const hasServerSupabaseKey =
+    !!process.env.SUPABASE_KEY || !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!process.env.SUPABASE_URL || !hasServerSupabaseKey) {
+    return NextResponse.json(
+      {
+        detail:
+          "Supabase server auth not configured. Set SUPABASE_URL and SUPABASE_KEY (service_role) or SUPABASE_SERVICE_ROLE_KEY.",
+      },
+      { status: 503 }
+    );
+  }
   const items = await integrationsDomain.listIntegrations(context.tenantId);
   return NextResponse.json({ items }, {
     headers: {
@@ -24,6 +35,17 @@ export async function POST(request: NextRequest) {
   const { context } = result;
   const forbidden = requireAdmin(context);
   if (forbidden) return forbidden.response;
+  const hasServerSupabaseKey =
+    !!process.env.SUPABASE_KEY || !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!process.env.SUPABASE_URL || !hasServerSupabaseKey) {
+    return NextResponse.json(
+      {
+        detail:
+          "Supabase server auth not configured. Set SUPABASE_URL and SUPABASE_KEY (service_role) or SUPABASE_SERVICE_ROLE_KEY.",
+      },
+      { status: 503 }
+    );
+  }
   let body: { type: string; credentials: Record<string, unknown>; display_name?: string };
   try {
     body = await request.json();

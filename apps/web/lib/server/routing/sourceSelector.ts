@@ -11,7 +11,9 @@ export async function getSourcesForIntent(
 ): Promise<string[]> {
   const sourceIds = INTENT_TO_SOURCES[intentLabel as IntentLabel];
   if (!sourceIds || sourceIds.length === 0) return [];
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) return [];
+  const hasServerSupabaseKey =
+    !!process.env.SUPABASE_KEY || !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!process.env.SUPABASE_URL || !hasServerSupabaseKey) return [];
   const supabase = createServerSupabaseClient();
   const { data } = await supabase
     .from("integrations")

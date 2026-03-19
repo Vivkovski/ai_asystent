@@ -47,6 +47,18 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   }
+  const hasServerSupabaseKey =
+    !!process.env.SUPABASE_KEY || !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const hasEncryptionKey = !!process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length >= 32;
+  if (!process.env.SUPABASE_URL || !hasServerSupabaseKey || !hasEncryptionKey) {
+    return NextResponse.json(
+      {
+        detail:
+          "Supabase server or encryption not configured in this environment. Set SUPABASE_URL + SUPABASE_KEY (service_role) or SUPABASE_SERVICE_ROLE_KEY, and ENCRYPTION_KEY (min 32 chars).",
+      },
+      { status: 503 }
+    );
+  }
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
