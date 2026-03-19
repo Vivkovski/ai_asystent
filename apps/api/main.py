@@ -48,8 +48,16 @@ app.include_router(messages.router, prefix="/api/v1")
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health(debug: str | None = None) -> dict:
+    """GET /health — status. GET /health?debug=1 — status + czy env ustawione (diagnostyka)."""
+    out: dict = {"status": "ok"}
+    if debug == "1":
+        out["auth_config"] = {
+            "supabase_url_set": bool(settings.supabase_url),
+            "supabase_key_set": bool(settings.supabase_key),
+            "supabase_jwt_secret_set": bool(settings.supabase_jwt_secret),
+        }
+    return out
 
 
 @app.get("/api/v1/debug-auth-config")
