@@ -1,6 +1,7 @@
 """JWT validation and profile loading. Returns CurrentContext or raises 401."""
 
 import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -9,25 +10,48 @@ from core.context import CurrentContext
 
 security = HTTPBearer(auto_error=False)
 
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        base = (settings.supabase_url or "").rstrip("/")
+        if not base:
+            raise ValueError("SUPABASE_URL not set (required for ES256 JWKS)")
+        _jwks_client = PyJWKClient(f"{base}/auth/v1/.well-known/jwks")
+    return _jwks_client
+
 
 def _decode_supabase_jwt(token: str) -> dict:
-    """Decode and verify Supabase JWT. Raises jwt.InvalidTokenError if invalid."""
-    if not settings.supabase_jwt_secret:
-        raise ValueError("SUPABASE_JWT_SECRET not set")
-    return jwt.decode(
-        token,
-        settings.supabase_jwt_secret,
-        algorithms=["HS256"],
-        audience="authenticated",
-        options={"verify_aud": True},
-    )
+    """Decode and verify Supabase JWT. Supports HS256 (secret) or ES256 (JWKS). Raises jwt.InvalidTokenError if invalid."""
+    if settings.supabase_jwt_secret:
+        return jwt.decode(
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256"],
+            audience="authenticated",
+            options={"verify_aud": True},
+        )
+    if settings.supabase_url:
+        jwks = _get_jwks_client()
+        signing_key = jwks.get_signing_key_from_jwt(token)
+        return jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["ES256"],
+            audience="authenticated",
+            options={"verify_aud": True},
+        )
+    raise ValueError("Set SUPABASE_JWT_SECRET (HS256) or SUPABASE_URL (ES256 via JWKS)")
 
 
 async def get_current_context(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> CurrentContext:
     """Validate JWT and load tenant_id, role from profiles. Return 401 if invalid or missing."""
-    if not settings.supabase_jwt_secret:
+    auth_configured = bool(settings.supabase_jwt_secret or settings.supabase_url)
+    if not auth_configured:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Auth not configured",
