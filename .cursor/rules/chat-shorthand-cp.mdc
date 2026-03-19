@@ -1,0 +1,19 @@
+---
+description: Skrót /cp w chacie = commit and push
+alwaysApply: true
+---
+
+# Skrót /cp (commit and push)
+
+Gdy użytkownik napisze **/cp** (lub "cp" w kontekście tej komendy), oznacza to prośbę o:
+
+1. **Commit** — zatwierdzenie wszystkich staged/zmienionych plików (z sensownym komunikatem, np. na podstawie diff lub podanego opisu).
+2. **Push** — wypchnięcie commitów na zdalne repozytorium.
+
+Działanie:
+- Wykonaj `git status`, żeby zobaczyć zmiany.
+- Zaproponuj lub użyj krótkiego, opisowego komunikatu commita (po polsku lub angielsku, zależnie od konwencji projektu).
+- Wykonaj `git add` (wszystko lub wskazane pliki), `git commit`, potem `git push`.
+- Jeśli użytkownik poda tekst po `/cp` (np. `/cp fix login`), potraktuj to jako komunikat commita.
+
+Nie wykonuj force push bez wyraźnej prośby użytkownika.
