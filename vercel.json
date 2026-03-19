@@ -3,5 +3,10 @@
   "buildCommand": "pnpm --filter @repo/shared build && pnpm --filter web build",
   "installCommand": "pnpm install",
   "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "functions": {
+    "api/backend.py": {
+      "maxDuration": 30
+    }
+  }
 }
