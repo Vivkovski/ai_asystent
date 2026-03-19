@@ -30,7 +30,9 @@ def _get_jwks_client() -> PyJWKClient:
         base = (settings.supabase_url or "").rstrip("/")
         if not base:
             raise ValueError("SUPABASE_URL not set (required for ES256 JWKS)")
-        _jwks_client = PyJWKClient(f"{base}/auth/v1/.well-known/jwks")
+        # Supabase JWKS endpoint returns 401 without apikey header (anon or service_role).
+        headers = {"apikey": settings.supabase_key} if settings.supabase_key else None
+        _jwks_client = PyJWKClient(f"{base}/auth/v1/.well-known/jwks", headers=headers)
     return _jwks_client
 
 
