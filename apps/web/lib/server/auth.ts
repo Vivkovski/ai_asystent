@@ -37,7 +37,7 @@ async function fetchJwks(): Promise<jose.JSONWebKeySet> {
   const base = process.env.SUPABASE_URL?.replace(/\/$/, "");
   const key = process.env.SUPABASE_KEY;
   if (!base || !key) throw new Error("SUPABASE_URL/SUPABASE_KEY not set");
-  const res = await fetch(`${base}/auth/v1/.well-known/jwks`, {
+  const res = await fetch(`${base}/auth/v1/.well-known/jwks.json`, {
     headers: { apikey: key },
   });
   if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
