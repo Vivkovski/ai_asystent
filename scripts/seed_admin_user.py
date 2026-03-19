@@ -3,7 +3,9 @@
 Create default admin user in Supabase Auth and seed tenant + profile (tenant_admin).
 User: admin@example.com / admin1234 (log in with this email and password).
 Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
-Usage: cd apps/api && uv run python ../../scripts/seed_admin_user.py
+Usage: From repo root, set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then run:
+  uv run python scripts/seed_admin_user.py
+  (or: python scripts/seed_admin_user.py with a venv that has supabase)
 """
 import os
 import sys

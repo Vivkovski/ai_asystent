@@ -2,8 +2,15 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
+
+const hasSupabaseEnv =
+  typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL.length > 0 &&
+  typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === "string" &&
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length > 0;
 
 function LoginForm() {
   const router = useRouter();
@@ -33,6 +40,11 @@ function LoginForm() {
     <main className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-semibold text-center text-neutral-800">Zaloguj się</h1>
+        {!hasSupabaseEnv && (
+          <p className="text-sm text-sky-800 bg-sky-50 border border-sky-200 rounded px-3 py-2">
+            Tryb mock: zaloguj dowolnym emailem i hasłem. <Link href="/" className="underline">Strona główna</Link>.
+          </p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             id="email"

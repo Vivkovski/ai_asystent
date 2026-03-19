@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from "react";
 
 type Conversation = { id: string; title: string | null; created_at: string; updated_at: string };
 type SourceItem = { id: number; type: string; title: string; link: string | null; unavailable?: boolean };
+type IntegrationTile = { id: string; type: string; display_name: string | null; enabled: boolean };
 type Message = {
   id: string;
   role: "user" | "assistant";
@@ -27,6 +28,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [integrations, setIntegrations] = useState<IntegrationTile[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -56,10 +58,19 @@ export default function ChatPage() {
       .catch(() => setMessages([]));
   }, [token]);
 
+  const fetchIntegrations = useCallback(() => {
+    if (!token) return;
+    apiFetch("/api/v1/integrations", { accessToken: token })
+      .then((r) => r.ok ? r.json() : Promise.resolve({ items: [] }))
+      .then((data: { items: IntegrationTile[] }) => setIntegrations(data.items || []))
+      .catch(() => setIntegrations([]));
+  }, [token]);
+
   useEffect(() => {
     if (!mounted || !token) return;
     fetchConversations();
-  }, [mounted, token, fetchConversations]);
+    fetchIntegrations();
+  }, [mounted, token, fetchConversations, fetchIntegrations]);
 
   useEffect(() => {
     if (currentId && token) fetchMessages(currentId);
@@ -178,11 +189,8 @@ export default function ChatPage() {
             </li>
           ))}
         </ul>
-        <div className="border-t border-neutral-200 p-2 flex flex-col gap-1">
-          <Link href="/admin" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100">
-            Panel
-          </Link>
-          <Link href="/admin/integrations" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100">
+        <div className="border-t border-neutral-200 p-2">
+          <Link href="/admin/integrations" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100 block">
             Integracje
           </Link>
         </div>
@@ -191,6 +199,19 @@ export default function ChatPage() {
         <div className="border-b border-neutral-200 p-2">
           <h1 className="text-lg font-semibold text-neutral-800">Chat</h1>
         </div>
+        {integrations.length > 0 && (
+          <div className="border-b border-neutral-100 px-4 py-2 flex flex-wrap gap-2">
+            {integrations.filter((i) => i.enabled).map((i) => (
+              <span
+                key={i.id}
+                className="inline-flex items-center rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700"
+                title={i.display_name || i.type}
+              >
+                {i.display_name || i.type}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="flex-1 overflow-auto p-4 space-y-4">
           {messages.length === 0 && !currentId && (
             <p className="text-neutral-500">Rozpocznij nową rozmowę lub wybierz istniejącą z listy.</p>

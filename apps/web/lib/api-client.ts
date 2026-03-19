@@ -1,16 +1,10 @@
 "use client";
 
-// NEXT_PUBLIC_API_URL: brak = ten sam host, ścieżka /api/backend (Vercel Services lub proxy).
-// Vercel Services wstrzykuje NEXT_PUBLIC_API_URL=/api/backend. Dwa projekty: ustaw pełny URL API.
-// Dev: NEXT_PUBLIC_API_URL=http://127.0.0.1:8000.
+// Single Next.js app: API under /api (same origin). NEXT_PUBLIC_API_URL only for external API if needed.
 const getApiBase = (): string => {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url !== undefined && url !== "") return url;
-  if (typeof window !== "undefined") return ""; // browser: same origin → relative /api/backend
-  // SSR (Node): Vercel ustawia VERCEL_URL – budujemy absolutny URL do backendu
-  if (typeof process !== "undefined" && process.env.VERCEL_URL)
-    return `https://${process.env.VERCEL_URL}/api/backend`;
-  return "http://127.0.0.1:8000"; // lokalny dev (SSR)
+  return "/api"; // same origin
 };
 
 export async function apiFetch(
@@ -24,6 +18,8 @@ export async function apiFetch(
   }
   headers.set("Content-Type", "application/json");
   const base = getApiBase();
-  const url = base ? `${base}${path}` : `/api/backend${path}`;
+  let pathNorm = path.startsWith("/") ? path : `/${path}`;
+  if (base === "/api" && pathNorm.startsWith("/api/")) pathNorm = pathNorm.slice(4);
+  const url = `${base.replace(/\/$/, "")}${pathNorm}`;
   return fetch(url, { ...init, headers });
 }

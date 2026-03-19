@@ -106,14 +106,8 @@ export default function AdminLayout({
     <div className="min-h-screen flex">
       <aside className="w-56 border-r border-neutral-200 p-4 flex flex-col gap-2">
         <Link
-          href="/admin"
-          className={pathname === "/admin" ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-primary-600"}
-        >
-          Panel
-        </Link>
-        <Link
           href="/admin/integrations"
-          className={pathname === "/admin/integrations" ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-primary-600"}
+          className={pathname?.startsWith("/admin/integrations") ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-primary-600"}
         >
           Integracje
         </Link>

@@ -12,6 +12,8 @@
     "@repo/shared": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
+    "googleapis": "^144.0.0",
+    "jose": "^5.9.6",
     "next": "^15.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
