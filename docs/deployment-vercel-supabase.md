@@ -1,9 +1,9 @@
 # Wdrożenie: Vercel (jeden projekt: frontend + backend) + Supabase
 
-**Jedna aplikacja Vercel** — projekt **flixhome-asystent** serwuje Next.js i FastAPI z tego samego repo:
-- **Root Directory:** musi być **repo root** (pusty lub katalog główny repo). Jeśli ustawisz Root Directory na `apps/web`, funkcja Pythona `api/backend.py` nie będzie w deployu i `/api/backend/*` da 404.
-- **Next.js** — build z `apps/web`, output `apps/web/.next`.
-- **Backend** — FastAPI pod `/api/backend` (plik `api/backend.py` w root repo). Requesty idą **bezpośrednio** do funkcji Pythona (brak proxy w Next.js).
+**Jedna aplikacja Vercel** — projekt **flixhome-asystent** serwuje Next.js i FastAPI z tego samego repo (Vercel **Services**):
+- **Framework w Vercel:** w Dashboard → Project Settings → General → **Framework Preset** ustaw na **Services**. Bez tego backend (FastAPI) nie będzie routowany i `/api/backend/*` da 404.
+- **Root Directory:** repo root (pusty lub `.`).
+- **experimentalServices** w `vercel.json`: serwis `web` (Next.js, prefix `/`) i `api` (FastAPI z `api/backend.py`, prefix `/api/backend`).
 - **GitHub:** repo podlinkowane — push na `main` uruchamia deploy.
 
 Production: **https://flixhome-asystent.vercel.app** (backend: `/api/backend/health`, `/api/backend/api/v1/...`).
