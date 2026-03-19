@@ -37,6 +37,7 @@ def _get_jwks_client() -> PyJWKClient:
 def _decode_supabase_jwt(token: str) -> dict:
     """Decode and verify Supabase JWT. Prefer ES256 (JWKS) when SUPABASE_URL set; fallback to HS256 (Legacy Secret)."""
     # Prefer JWKS (ES256) — Supabase now signs with ECC by default; Legacy Secret is for older tokens.
+    # Catch any JWKS fetch error (e.g. 401 from Supabase on serverless) and fall back to HS256.
     if settings.supabase_url:
         try:
             jwks = _get_jwks_client()
@@ -48,8 +49,8 @@ def _decode_supabase_jwt(token: str) -> dict:
                 audience="authenticated",
                 options={"verify_aud": True},
             )
-        except jwt.InvalidTokenError:
-            pass  # fallback to HS256 below
+        except (jwt.InvalidTokenError, Exception):
+            pass  # fallback to HS256 below (e.g. PyJWKClientConnectionError when JWKS returns 401)
     if settings.supabase_jwt_secret:
         return jwt.decode(
             token,
