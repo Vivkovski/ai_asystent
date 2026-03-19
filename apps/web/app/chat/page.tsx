@@ -163,7 +163,15 @@ export default function ChatPage() {
         setLoading(false);
         return;
       }
-      if (!res.ok) throw new Error(data.message ?? data.detail ?? res.statusText);
+      if (!res.ok) {
+        const errMsg =
+          typeof data?.detail === "string"
+            ? data.detail
+            : typeof data?.message === "string"
+              ? data.message
+              : res.statusText || "Błąd";
+        throw new Error(errMsg);
+      }
       const msg = data.message as Message;
       setMessages((prev) => [...prev, { ...msg, id: msg.id, role: "assistant", created_at: msg.created_at }]);
       fetchConversations();
