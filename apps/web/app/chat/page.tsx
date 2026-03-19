@@ -166,6 +166,13 @@ export default function ChatPage() {
   const isEmpty = messages.length === 0 && !currentId;
   const enabledIntegrations = integrations.filter((i) => i.enabled);
 
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <div className="flex h-screen bg-neutral-50">
       {/* Sidebar — wzór ChatGPT/Claude */}
@@ -199,7 +206,7 @@ export default function ChatPage() {
             ))}
           </ul>
         </div>
-        <nav className="border-t border-neutral-100 p-2">
+        <nav className="border-t border-neutral-100 p-2 space-y-0.5">
           <Link
             href="/admin/integrations"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
@@ -207,6 +214,14 @@ export default function ChatPage() {
             <span className="text-neutral-500 aria-hidden">⚙</span>
             Integracje
           </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+          >
+            <span className="text-neutral-500 aria-hidden">↪</span>
+            Wyloguj
+          </button>
         </nav>
       </aside>
 

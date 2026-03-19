@@ -79,3 +79,4 @@ Wszystkie zmienne ustaw w jednym miejscu (np. `.env.local` w `apps/web` lub root
 - **401 na /api/v1/me** — sprawdź `SUPABASE_JWT_SECRET` (musi być JWT Secret z Dashboard, np. Legacy JWT Secret).
 - **Encryption failed przy dodawaniu integracji** — ustaw `ENCRYPTION_KEY` (min. 32 znaki).
 - **Google Drive: „refresh_token required”** — użyj przycisku „Zaloguj się przez Google” w adminie (wymaga GOOGLE_*). W Google Cloud Console dodaj w Authorized redirect URIs dokładnie ten sam URL co `GOOGLE_OAUTH_REDIRECT_URI`.
+- **Google OAuth: 403 access_denied** — aplikacja jest w trybie **Testing**. W Google Cloud Console → APIs & Services → OAuth consent screen → **Test users** dodaj e-mail, którym logujesz się (np. wywijas.p@gmail.com). Zapisz i spróbuj ponownie. Aby udostępnić wszystkim: ustaw **Publishing status** na **In production** (dla Drive może być później wymagana weryfikacja Google).

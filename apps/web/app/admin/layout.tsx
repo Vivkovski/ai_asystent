@@ -102,6 +102,13 @@ export default function AdminLayout({
     );
   }
 
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <div className="min-h-screen flex">
       <aside className="w-56 border-r border-neutral-200 p-4 flex flex-col gap-2">
@@ -111,9 +118,18 @@ export default function AdminLayout({
         >
           Integracje
         </Link>
-        <Link href="/chat" className="mt-auto text-sm text-neutral-600 hover:text-primary-600">
-          ← Chat
-        </Link>
+        <div className="mt-auto flex flex-col gap-2">
+          <Link href="/chat" className="text-sm text-neutral-600 hover:text-primary-600">
+            ← Chat
+          </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="text-left text-sm text-neutral-600 hover:text-primary-600"
+          >
+            Wyloguj
+          </button>
+        </div>
       </aside>
       <main className="flex-1 p-4">{children}</main>
     </div>

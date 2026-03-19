@@ -6,20 +6,22 @@ Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 Usage: From repo root, set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, then run:
   uv run python scripts/seed_admin_user.py
   (or: python scripts/seed_admin_user.py with a venv that has supabase)
+
+Optional: SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD to create a different admin (default: admin@example.com / admin1234).
 """
 import os
 import sys
 
-ADMIN_EMAIL = "admin@example.com"
-ADMIN_PASSWORD = "admin1234"
+ADMIN_EMAIL = os.environ.get("SEED_ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = os.environ.get("SEED_ADMIN_PASSWORD", "admin1234")
 TENANT_ID = "00000000-0000-0000-0000-000000000001"
 
 
 def main() -> None:
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
     if not url or not key:
-        print("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY", file=sys.stderr)
+        print("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_KEY)", file=sys.stderr)
         sys.exit(1)
 
     from supabase import create_client

@@ -58,3 +58,24 @@ Aby mieć konto do logowania z rolą **tenant_admin**:
 | Google Cloud | Authorized redirect URI = `https://<domena>.vercel.app/admin/integrations/google/callback` |
 
 Po deployu: logowanie (Supabase Auth), czat (`/chat`), panel integracji i „Zaloguj się przez Google”.
+
+---
+
+## 6. 401 na prodzie — diagnostyka
+
+Jeśli w konsoli/Network widać **401** na `/api/v1/me`, `/api/v1/conversations` lub `/api/v1/integrations`:
+
+1. **Sprawdź body odpowiedzi 401**  
+   W DevTools → Network → kliknij request z 401 → zakładka Response. JSON ma pole `detail`:
+   - `"Auth not configured"` → na Vercel (Production) nie ustawiono `SUPABASE_URL` lub `SUPABASE_JWT_SECRET`. Dodaj zmienne i zrób **Redeploy**.
+   - `"Missing or invalid authorization"` → frontend nie wysyła tokenu (nie jesteś zalogowany na tej domenie albo session się nie ładuje). Zaloguj się na prodzie (ten sam projekt Supabase co w `NEXT_PUBLIC_*`).
+   - `"Invalid or expired token"` → token jest nieprawidłowy lub wygasł. Zwykle gdy `SUPABASE_JWT_SECRET` na Vercel nie zgadza się z **JWT Secret** w Supabase (Project Settings → API). Skopiuj dokładnie JWT Secret z Supabase i ustaw w Vercel, potem Redeploy.
+   - `"Profile not found"` → użytkownik jest w Supabase Auth, ale backend nie może odczytać wiersza z `profiles`. **(1)** Upewnij się, że `SUPABASE_KEY` na Vercel to **service_role key** (secret), a nie anon key — inaczej zapytanie do `profiles` dostanie 403 (42501). **(2)** Uruchom wszystkie migracje z `supabase/migrations/` (w tym `20260319000000_backend_profile_access.sql`, który daje service_role prawo SELECT na `profiles`). **(3)** Upewnij się, że wiersz w `profiles` istnieje — np. `scripts/seed_admin_user.py` (z `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_URL`).
+
+2. **Czy backend ma env**  
+   Otwórz: `https://<domena>.vercel.app/api/health?debug=1`.  
+   Powinno być: `auth_config: { supabase_url_set: true, supabase_key_set: true, supabase_jwt_secret_set: true }`.  
+   Jeśli któreś jest `false`, ustaw brakujące zmienne w Vercel → Project → Settings → Environment Variables dla **Production** i zrób Redeploy.
+
+3. **Czy na prodzie jesteś zalogowany**  
+   Na produkcji musisz się zalogować przez Supabase (email/hasło). Jeśli testowałeś tylko lokalnie na mocku, na prodzie nie ma sesji — wejdź na `/login` na domenie Vercel i zaloguj się.
