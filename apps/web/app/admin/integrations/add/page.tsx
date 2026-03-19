@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Button, Input, Label, PageTitle } from "@/components/ui";
 
 const TYPES = [
@@ -15,7 +15,7 @@ const TYPES = [
 
 const GOOGLE_OAUTH_PENDING_KEY = "google_oauth_pending";
 
-export default function AddIntegrationPage() {
+function AddIntegrationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeFromUrl = searchParams.get("type");
@@ -226,5 +226,13 @@ export default function AddIntegrationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AddIntegrationPage() {
+  return (
+    <Suspense fallback={<p className="text-neutral-600">Ładowanie…</p>}>
+      <AddIntegrationForm />
+    </Suspense>
   );
 }

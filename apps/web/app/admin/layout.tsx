@@ -58,6 +58,12 @@ export default function AdminLayout({
     })();
   }, [router]);
 
+  useEffect(() => {
+    if (mounted && role === "end_user") {
+      router.replace("/chat");
+    }
+  }, [mounted, role, router]);
+
   if (!mounted) {
     return (
       <main className="p-4">
@@ -79,6 +85,14 @@ export default function AdminLayout({
     return (
       <main className="p-4">
         <p className="text-neutral-600">Ładowanie…</p>
+      </main>
+    );
+  }
+
+  if (role === "end_user") {
+    return (
+      <main className="p-4">
+        <p className="text-neutral-600">Przekierowanie…</p>
       </main>
     );
   }

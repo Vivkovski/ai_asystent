@@ -54,10 +54,6 @@ export default function AdminIntegrationsPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
-  if (loading) return <p className="text-neutral-600">Ładowanie listy…</p>;
-  if (error) return <p className="text-error">Błąd: {error}</p>;
-
   const getStatusVariant = (row: Integration): "success" | "warning" | "error" => {
     if (!row.enabled) return "warning";
     if (row.last_error) return "error";
@@ -65,6 +61,57 @@ export default function AdminIntegrationsPage() {
   };
 
   const countByType = (type: string) => items.filter((i) => i.type === type).length;
+
+  const renderListSection = () => {
+    if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
+    if (loading) return <p className="text-neutral-600">Ładowanie listy…</p>;
+    if (error) return <p className="text-error">Błąd: {error}</p>;
+    if (items.length === 0) {
+      return (
+        <p className="text-neutral-600">
+          Brak dodanych integracji. Wybierz kafelek powyżej, aby dodać pierwszą.
+        </p>
+      );
+    }
+    return (
+      <table className="w-full border-collapse border border-neutral-200">
+        <thead>
+          <tr className="bg-neutral-50">
+            <th className="border border-neutral-200 p-2 text-left">Typ</th>
+            <th className="border border-neutral-200 p-2 text-left">Nazwa</th>
+            <th className="border border-neutral-200 p-2 text-left">Status</th>
+            <th className="border border-neutral-200 p-2 text-left">Ostatni test</th>
+            <th className="border border-neutral-200 p-2 text-left">Błąd</th>
+            <th className="border border-neutral-200 p-2 text-left">Akcje</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((row) => (
+            <tr key={row.id}>
+              <td className="border border-neutral-200 p-2">{TYPE_LABELS[row.type] || row.type}</td>
+              <td className="border border-neutral-200 p-2">{row.display_name || "—"}</td>
+              <td className="border border-neutral-200 p-2">
+                <Badge variant={getStatusVariant(row)}>
+                  {row.enabled ? (row.last_error ? "Błąd" : "Połączono") : "Wyłączona"}
+                </Badge>
+              </td>
+              <td className="border border-neutral-200 p-2 text-sm text-neutral-600">
+                {row.last_tested_at ? new Date(row.last_tested_at).toLocaleString() : "—"}
+              </td>
+              <td className="border border-neutral-200 p-2 text-sm text-error max-w-xs truncate" title={row.last_error || ""}>
+                {row.last_error || "—"}
+              </td>
+              <td className="border border-neutral-200 p-2">
+                <Link href={`/admin/integrations/${row.id}`} className="text-primary-600 text-sm hover:underline">
+                  Edytuj
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
 
   return (
     <div>
@@ -100,46 +147,7 @@ export default function AdminIntegrationsPage() {
       </section>
       <section>
         <h2 className="text-lg font-semibold text-neutral-800 mb-3">Twoje integracje</h2>
-      {items.length === 0 ? (
-        <p className="text-neutral-600">Brak dodanych integracji. Wybierz kafelek powyżej, aby dodać pierwszą.</p>
-      ) : (
-        <table className="w-full border-collapse border border-neutral-200">
-          <thead>
-            <tr className="bg-neutral-50">
-              <th className="border border-neutral-200 p-2 text-left">Typ</th>
-              <th className="border border-neutral-200 p-2 text-left">Nazwa</th>
-              <th className="border border-neutral-200 p-2 text-left">Status</th>
-              <th className="border border-neutral-200 p-2 text-left">Ostatni test</th>
-              <th className="border border-neutral-200 p-2 text-left">Błąd</th>
-              <th className="border border-neutral-200 p-2 text-left">Akcje</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((row) => (
-              <tr key={row.id}>
-                <td className="border border-neutral-200 p-2">{TYPE_LABELS[row.type] || row.type}</td>
-                <td className="border border-neutral-200 p-2">{row.display_name || "—"}</td>
-                <td className="border border-neutral-200 p-2">
-                  <Badge variant={getStatusVariant(row)}>
-                    {row.enabled ? (row.last_error ? "Błąd" : "Połączono") : "Wyłączona"}
-                  </Badge>
-                </td>
-                <td className="border border-neutral-200 p-2 text-sm text-neutral-600">
-                  {row.last_tested_at ? new Date(row.last_tested_at).toLocaleString() : "—"}
-                </td>
-                <td className="border border-neutral-200 p-2 text-sm text-error max-w-xs truncate" title={row.last_error || ""}>
-                  {row.last_error || "—"}
-                </td>
-                <td className="border border-neutral-200 p-2">
-                  <Link href={`/admin/integrations/${row.id}`} className="text-primary-600 text-sm hover:underline">
-                    Edytuj
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        {renderListSection()}
       </section>
     </div>
   );
