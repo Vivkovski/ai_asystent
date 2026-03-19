@@ -33,11 +33,16 @@ export async function createConversation(
     .select()
     .single();
   if (error || !data) {
-    console.error("[chat] createConversation failed:", error?.message ?? "no data", {
-      code: error?.code,
-      details: error?.details,
-    });
-    throw new Error(error?.message ?? "Insert failed");
+    const e = error as
+      | { message?: string; details?: string; hint?: string; code?: string }
+      | null
+      | undefined;
+    const detail = [e?.message, e?.details, e?.hint, e?.code]
+      .filter((x) => typeof x === "string" && x.trim().length > 0)
+      .join(" | ");
+    const msg = detail || (error ? JSON.stringify(error) : "no row returned (check grants / RLS)");
+    console.error("[chat] createConversation failed:", msg, { data: data ?? null });
+    throw new Error(msg);
   }
   return serialize(data as Record<string, unknown>);
 }
@@ -91,7 +96,13 @@ export async function createMessage(
     })
     .select()
     .single();
-  if (error || !data) throw new Error("Insert failed");
+  if (error || !data) {
+    const e = error as { message?: string; details?: string; hint?: string; code?: string } | null;
+    const detail = [e?.message, e?.details, e?.hint, e?.code]
+      .filter((x) => typeof x === "string" && x.trim().length > 0)
+      .join(" | ");
+    throw new Error(detail || "Insert message failed");
+  }
   return serialize(data as Record<string, unknown>);
 }
 

@@ -36,10 +36,14 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json(conv);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Wystąpił błąd";
-    console.error("[conversations POST]", message, err);
+    const detail = err instanceof Error ? err.message : "Wystąpił błąd";
+    console.error("[conversations POST]", detail, err);
     return NextResponse.json(
-      { code: "INTERNAL_ERROR", message: "Nie udało się utworzyć rozmowy. Spróbuj ponownie." },
+      {
+        code: "INTERNAL_ERROR",
+        message: "Nie udało się utworzyć rozmowy. Spróbuj ponownie.",
+        detail,
+      },
       { status: 500 }
     );
   }

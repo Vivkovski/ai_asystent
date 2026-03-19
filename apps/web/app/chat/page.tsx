@@ -91,8 +91,10 @@ export default function ChatPage() {
           const text = await r.text();
           let msg = r.statusText;
           try {
-            const j = JSON.parse(text);
-            if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+            const j = JSON.parse(text) as { message?: string; detail?: string };
+            const human = typeof j.message === "string" ? j.message : "";
+            const tech = typeof j.detail === "string" ? j.detail : "";
+            msg = tech ? (human ? `${human} — ${tech}` : tech) : human || msg;
           } catch {
             if (r.status === 404) msg = "Backend niedostępny (404). Sprawdź wdrożenie.";
           }
@@ -128,10 +130,10 @@ export default function ChatPage() {
         const text = await r.text();
         let msg = r.statusText;
         try {
-          const j = JSON.parse(text);
-          msg = (j.message ?? j.detail) != null
-            ? (typeof (j.message ?? j.detail) === "string" ? (j.message ?? j.detail) : JSON.stringify(j.message ?? j.detail))
-            : msg;
+          const j = JSON.parse(text) as { message?: string; detail?: string };
+          const human = typeof j.message === "string" ? j.message : "";
+          const tech = typeof j.detail === "string" ? j.detail : "";
+          msg = tech ? (human ? `${human} — ${tech}` : tech) : human || msg;
         } catch {
           if (r.status === 404) msg = "Backend niedostępny (404). Sprawdź wdrożenie.";
         }
