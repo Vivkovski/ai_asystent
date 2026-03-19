@@ -1,5 +1,7 @@
 """JWT validation and profile loading. Returns CurrentContext or raises 401."""
 
+import json
+import time
 import jwt
 from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
@@ -11,6 +13,15 @@ from core.context import CurrentContext
 security = HTTPBearer(auto_error=False)
 
 _jwks_client: PyJWKClient | None = None
+
+# #region agent log
+def _debug_log(message: str, data: dict, hypothesis_id: str) -> None:
+    try:
+        with open("/Users/pawelwywijas/flixhome_asystent/.cursor/debug-f9f575.log", "a") as f:
+            f.write(json.dumps({"sessionId": "f9f575", "timestamp": int(time.time() * 1000), "location": "core/auth.py", "message": message, "data": data, "hypothesisId": hypothesis_id}) + "\n")
+    except Exception:
+        pass
+# #endregion
 
 
 def _get_jwks_client() -> PyJWKClient:
@@ -24,22 +35,26 @@ def _get_jwks_client() -> PyJWKClient:
 
 
 def _decode_supabase_jwt(token: str) -> dict:
-    """Decode and verify Supabase JWT. Supports HS256 (secret) or ES256 (JWKS). Raises jwt.InvalidTokenError if invalid."""
+    """Decode and verify Supabase JWT. Prefer ES256 (JWKS) when SUPABASE_URL set; fallback to HS256 (Legacy Secret)."""
+    # Prefer JWKS (ES256) — Supabase now signs with ECC by default; Legacy Secret is for older tokens.
+    if settings.supabase_url:
+        try:
+            jwks = _get_jwks_client()
+            signing_key = jwks.get_signing_key_from_jwt(token)
+            return jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256"],
+                audience="authenticated",
+                options={"verify_aud": True},
+            )
+        except jwt.InvalidTokenError:
+            pass  # fallback to HS256 below
     if settings.supabase_jwt_secret:
         return jwt.decode(
             token,
             settings.supabase_jwt_secret,
             algorithms=["HS256"],
-            audience="authenticated",
-            options={"verify_aud": True},
-        )
-    if settings.supabase_url:
-        jwks = _get_jwks_client()
-        signing_key = jwks.get_signing_key_from_jwt(token)
-        return jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=["ES256"],
             audience="authenticated",
             options={"verify_aud": True},
         )
@@ -62,9 +77,19 @@ async def get_current_context(
             detail="Missing or invalid authorization",
         )
     token = credentials.credentials
+    # #region agent log
+    _debug_log("auth entry", {"auth_configured": auth_configured, "token_len": len(token) if token else 0}, "E")
+    # #endregion
     try:
         payload = _decode_supabase_jwt(token)
-    except jwt.InvalidTokenError:
+        # #region agent log
+        _debug_log("decode ok", {"sub": payload.get("sub"), "aud": payload.get("aud")}, "C")
+        # #endregion
+    except jwt.InvalidTokenError as e:
+        # #region agent log
+        _debug_log("decode failed", {"exc_type": type(e).__name__, "exc_msg": str(e)}, "B")
+        _debug_log("decode failed", {"exc_type": type(e).__name__, "exc_msg": str(e)}, "D")
+        # #endregion
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

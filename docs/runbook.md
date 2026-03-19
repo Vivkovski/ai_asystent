@@ -80,6 +80,10 @@
 
 ## Częste problemy
 
+- **500 na /api/v1/me lub /api/v1/conversations (czat nie działa)** — backend zwraca 500, gdy brakuje konfiguracji Supabase lub rzuca się nieobsłużony wyjątek. Kroki:
+  1. Sprawdź diagnostykę: `GET https://<domena>/api/backend/health?debug=1` — w odpowiedzi `auth_config` pokaże, czy backend widzi `supabase_url`, `supabase_key`, `supabase_jwt_secret`.
+  2. Na Vercel (jeden projekt z Services): w **tym samym** projekcie muszą być ustawione zmienne **backendu**: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_JWT_SECRET` (nie tylko `NEXT_PUBLIC_SUPABASE_*`). Bez nich auth i lista konwersacji rzucają wyjątkiem → 500.
+  3. Po zmianie zmiennych zrób **Redeploy** projektu (zmienne są wstrzykiwane przy buildzie/deployu).
 - **401 na /api/v1/me** — sprawdź `SUPABASE_JWT_SECRET` (musi być JWT Secret z Dashboard).
 - **Encryption failed przy dodawaniu integracji** — ustaw `ENCRYPTION_KEY` (min. 32 znaki).
 - **Google Drive: „refresh_token required”** — użyj przycisku „Zaloguj się przez Google” w adminie (wymaga `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`). W Google Cloud Console dodaj w Authorized redirect URIs dokładnie ten sam URL co `GOOGLE_OAUTH_REDIRECT_URI`.
