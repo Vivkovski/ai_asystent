@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from config import settings
 from api.v1 import me
 from api.v1.admin import integrations as admin_integrations
 from api.v1.admin import google_oauth as admin_google_oauth
@@ -49,3 +50,13 @@ app.include_router(messages.router, prefix="/api/v1")
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/v1/debug-auth-config")
+def debug_auth_config() -> dict[str, bool]:
+    """Diagnostyka: czy backend widzi env (bez ujawniania sekretów). Usuń w produkcji."""
+    return {
+        "supabase_url_set": bool(settings.supabase_url),
+        "supabase_key_set": bool(settings.supabase_key),
+        "supabase_jwt_secret_set": bool(settings.supabase_jwt_secret),
+    }

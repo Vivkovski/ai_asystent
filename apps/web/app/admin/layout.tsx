@@ -29,9 +29,14 @@ export default function AdminLayout({
       try {
         const res = await apiFetch("/api/v1/me", { accessToken: token });
         if (res.status === 401) {
-          setApiError(
-            "Backend zwrócił 401 (brak profilu lub błędna konfiguracja JWT). W Vercel ustaw SUPABASE_URL i SUPABASE_KEY; użytkownik musi mieć wpis w tabeli profiles (tenant_id, role). Po zmianie env zrób redeploy."
-          );
+          let detail = "Błąd 401 z API.";
+          try {
+            const body = await res.json();
+            if (body?.detail) detail = body.detail;
+          } catch {
+            /* ignore */
+          }
+          setApiError(`Backend 401: ${detail}`);
           setMounted(true);
           return;
         }
