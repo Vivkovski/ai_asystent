@@ -163,106 +163,164 @@ export default function ChatPage() {
 
   if (!mounted) return <main className="p-4"><p className="text-neutral-600">Ładowanie…</p></main>;
 
+  const isEmpty = messages.length === 0 && !currentId;
+  const enabledIntegrations = integrations.filter((i) => i.enabled);
+
   return (
-    <div className="flex h-screen">
-      <aside className="w-64 border-r border-neutral-200 flex flex-col">
-        <div className="p-2 border-b border-neutral-200">
+    <div className="flex h-screen bg-neutral-50">
+      {/* Sidebar — wzór ChatGPT/Claude */}
+      <aside className="w-60 flex-shrink-0 flex flex-col bg-white border-r border-neutral-200">
+        <div className="p-3">
           <button
             type="button"
             onClick={handleNewConversation}
             disabled={loading}
-            className="w-full rounded bg-primary-600 text-white py-2 text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-neutral-900 text-white py-2.5 text-sm font-medium hover:bg-neutral-800 disabled:opacity-50 flex items-center justify-center gap-2"
           >
+            <span className="text-base leading-none">+</span>
             Nowa rozmowa
           </button>
         </div>
-        <ul className="flex-1 overflow-auto p-2">
-          {conversations.map((c) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                onClick={() => setCurrentId(c.id)}
-                className={`w-full text-left px-3 py-2 rounded text-sm truncate ${currentId === c.id ? "bg-neutral-200" : "hover:bg-neutral-100"}`}
-              >
-                {c.title || "Nowa rozmowa"}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="border-t border-neutral-200 p-2">
-          <Link href="/admin/integrations" className="text-sm text-neutral-600 hover:text-primary-600 px-3 py-2 rounded hover:bg-neutral-100 block">
+        <div className="flex-1 overflow-auto min-h-0 px-2">
+          <p className="px-2 py-1.5 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+            Rozmowy
+          </p>
+          <ul className="space-y-0.5 pb-2">
+            {conversations.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => setCurrentId(c.id)}
+                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm truncate transition-colors ${currentId === c.id ? "bg-neutral-100 text-neutral-900 font-medium" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"}`}
+                >
+                  {c.title || "Nowa rozmowa"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <nav className="border-t border-neutral-100 p-2">
+          <Link
+            href="/admin/integrations"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+          >
+            <span className="text-neutral-500 aria-hidden">⚙</span>
             Integracje
           </Link>
-        </div>
+        </nav>
       </aside>
+
+      {/* Główny obszar czatu */}
       <main className="flex-1 flex flex-col min-w-0">
-        <div className="border-b border-neutral-200 p-2">
-          <h1 className="text-lg font-semibold text-neutral-800">Chat</h1>
-        </div>
-        {integrations.length > 0 && (
-          <div className="border-b border-neutral-100 px-4 py-2 flex flex-wrap gap-2">
-            {integrations.filter((i) => i.enabled).map((i) => (
-              <span
-                key={i.id}
-                className="inline-flex items-center rounded-md bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700"
-                title={i.display_name || i.type}
-              >
-                {i.display_name || i.type}
-              </span>
-            ))}
+        {isEmpty ? (
+          /* Pusty stan — wycentrowany jak w GPT/Claude */
+          <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
+            <h2 className="text-2xl font-semibold text-neutral-800 text-center mb-1">
+              Cześć, w czym mogę pomóc?
+            </h2>
+            <p className="text-neutral-500 text-sm text-center mb-8">
+              Zadaj pytanie na podstawie podłączonych źródeł.
+            </p>
+            {enabledIntegrations.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-2 mb-8 max-w-xl">
+                {enabledIntegrations.map((i) => (
+                  <span
+                    key={i.id}
+                    className="inline-flex items-center rounded-full bg-white border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 shadow-sm"
+                    title={i.display_name || i.type}
+                  >
+                    {i.display_name || i.type}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Lista wiadomości — wycentrowana kolumna */
+          <div className="flex-1 overflow-auto">
+            <div className="mx-auto max-w-3xl py-6 px-4">
+              {messages.map((m) => (
+                <div
+                  key={m.id || m.created_at}
+                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} mb-6`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-left ${
+                      m.role === "user"
+                        ? "bg-primary-600 text-white"
+                        : "bg-white border border-neutral-200 shadow-sm"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{m.content}</p>
+                    {m.role === "assistant" && m.sources && m.sources.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-neutral-200">
+                        <p className="text-xs font-medium text-neutral-500 mb-1">Źródła</p>
+                        <ul className="text-sm space-y-1">
+                          {m.sources.map((s) => (
+                            <li key={s.id}>
+                              {s.link ? (
+                                <a
+                                  href={s.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary-600 hover:underline"
+                                >
+                                  [{s.id}] {s.title}
+                                  {s.unavailable ? " (niedostępne)" : ""}
+                                </a>
+                              ) : (
+                                <span>
+                                  [{s.id}] {s.title}
+                                  {s.unavailable ? " (niedostępne)" : ""}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex justify-start mb-6">
+                  <div className="rounded-2xl bg-white border border-neutral-200 shadow-sm px-4 py-3 text-neutral-500 text-sm">
+                    Asystent odpowiada…
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
-        <div className="flex-1 overflow-auto p-4 space-y-4">
-          {messages.length === 0 && !currentId && (
-            <p className="text-neutral-500">Rozpocznij nową rozmowę lub wybierz istniejącą z listy.</p>
-          )}
-          {messages.map((m) => (
-            <div key={m.id || m.created_at} className={m.role === "user" ? "text-right" : ""}>
-              <div className={`inline-block max-w-[85%] rounded-lg px-4 py-2 text-left ${m.role === "user" ? "bg-primary-100" : "bg-neutral-100"}`}>
-                <p className="whitespace-pre-wrap">{m.content}</p>
-                {m.role === "assistant" && m.sources && m.sources.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className="text-xs font-medium text-neutral-600 mb-1">Źródła</p>
-                    <ul className="text-sm space-y-1">
-                      {m.sources.map((s) => (
-                        <li key={s.id}>
-                          {s.link ? (
-                            <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
-                              [{s.id}] {s.title}{s.unavailable ? " (niedostępne)" : ""}
-                            </a>
-                          ) : (
-                            <span>[{s.id}] {s.title}{s.unavailable ? " (niedostępne)" : ""}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {loading && <p className="text-neutral-500 text-sm">Asystent odpowiada…</p>}
-        </div>
-        {error && <p className="px-4 py-2 text-sm text-error">{error}</p>}
-        <form onSubmit={handleSubmit} className="p-4 border-t border-neutral-200">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Zadaj pytanie…"
-              className="flex-1 border border-neutral-200 rounded px-3 py-2"
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              className="rounded bg-primary-600 text-white px-4 py-2 font-medium disabled:opacity-50 hover:bg-primary-700"
-            >
-              Wyślij
-            </button>
+
+        {error && (
+          <div className="mx-auto max-w-3xl px-4 py-2">
+            <p className="text-sm text-red-600">{error}</p>
           </div>
-        </form>
+        )}
+
+        {/* Pole wpisu na dole — styl GPT/Claude */}
+        <div className="flex-shrink-0 p-4">
+          <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+            <div className="flex gap-2 rounded-2xl border border-neutral-200 bg-white p-2 shadow-sm focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Zadaj pytanie…"
+                className="flex-1 bg-transparent px-4 py-3 text-[15px] placeholder:text-neutral-400 outline-none"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                disabled={loading || !input.trim()}
+                className="rounded-xl bg-primary-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              >
+                Wyślij
+              </button>
+            </div>
+          </form>
+        </div>
       </main>
     </div>
   );
