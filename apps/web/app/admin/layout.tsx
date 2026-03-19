@@ -30,7 +30,7 @@ export default function AdminLayout({
         const res = await apiFetch("/api/v1/me", { accessToken: token });
         if (res.status === 401) {
           setApiError(
-            "Backend zwrócił 401 (brak profilu lub błędna konfiguracja JWT). Upewnij się, że w Vercel ustawiono SUPABASE_JWT_SECRET i że użytkownik ma wpis w tabeli profiles."
+            "Backend zwrócił 401 (brak profilu lub błędna konfiguracja JWT). W Vercel ustaw SUPABASE_URL i SUPABASE_KEY; użytkownik musi mieć wpis w tabeli profiles (tenant_id, role). Po zmianie env zrób redeploy."
           );
           setMounted(true);
           return;
