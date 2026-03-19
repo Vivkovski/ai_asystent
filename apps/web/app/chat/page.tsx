@@ -112,7 +112,11 @@ export default function ChatPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = input.trim();
-    if (!text || !token) return;
+    if (!token) {
+      setError("Sesja wygasła. Odśwież stronę lub wyloguj i zaloguj się ponownie.");
+      return;
+    }
+    if (!text) return;
     let convId = currentId;
     if (!convId) {
       const r = await apiFetch("/api/v1/conversations", {
@@ -125,7 +129,9 @@ export default function ChatPage() {
         let msg = r.statusText;
         try {
           const j = JSON.parse(text);
-          if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+          msg = (j.message ?? j.detail) != null
+            ? (typeof (j.message ?? j.detail) === "string" ? (j.message ?? j.detail) : JSON.stringify(j.message ?? j.detail))
+            : msg;
         } catch {
           if (r.status === 404) msg = "Backend niedostępny (404). Sprawdź wdrożenie.";
         }
@@ -148,8 +154,16 @@ export default function ChatPage() {
         accessToken: token,
         body: JSON.stringify({ content: text }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || res.statusText);
+      let data: { message?: Message | string; detail?: string };
+      try {
+        data = await res.json();
+      } catch {
+        setError(res.status === 404 ? "Backend niedostępny (404). Sprawdź wdrożenie." : res.statusText || "Błąd sieci.");
+        setMessages((prev) => prev.filter((m) => m.role !== "user" || m.content !== text));
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) throw new Error(data.message ?? data.detail ?? res.statusText);
       const msg = data.message as Message;
       setMessages((prev) => [...prev, { ...msg, id: msg.id, role: "assistant", created_at: msg.created_at }]);
       fetchConversations();

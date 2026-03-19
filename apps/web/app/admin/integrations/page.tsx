@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge, Card, PageTitle } from "@/components/ui";
 
@@ -35,6 +35,21 @@ export default function AdminIntegrationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
+  const fetchIntegrations = useCallback(async (accessToken: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch("/api/v1/admin/integrations", { accessToken });
+      if (!res.ok) throw new Error(res.statusText);
+      const data = await res.json() as { items?: Integration[] };
+      setItems(data.items ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Błąd ładowania");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -44,15 +59,24 @@ export default function AdminIntegrationsPage() {
 
   useEffect(() => {
     if (!token) return;
-    apiFetch("/api/v1/admin/integrations", { accessToken: token })
-      .then((res) => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      })
-      .then((data: { items: Integration[] }) => setItems(data.items || []))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [token]);
+    fetchIntegrations(token);
+  }, [token, fetchIntegrations]);
+
+  useEffect(() => {
+    if (!token) return;
+    const onFocus = () => fetchIntegrations(token);
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [token, fetchIntegrations]);
+
+  // Po przekierowaniu z OAuth (?added=...) odśwież listę po chwili (na wypadek opóźnienia zapisu)
+  useEffect(() => {
+    if (!token || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("added")) return;
+    const t = setTimeout(() => fetchIntegrations(token), 600);
+    return () => clearTimeout(t);
+  }, [token, fetchIntegrations]);
 
   const getStatusVariant = (row: Integration): "success" | "warning" | "error" => {
     if (!row.enabled) return "warning";
@@ -60,7 +84,10 @@ export default function AdminIntegrationsPage() {
     return "success";
   };
 
-  const countByType = (type: string) => items.filter((i) => i.type === type).length;
+  const integrationsByType = (type: string) => items.filter((i) => i.type === type);
+  const countByType = (type: string) => integrationsByType(type).length;
+  const hasConnected = (type: string) =>
+    integrationsByType(type).some((i) => i.enabled && !i.last_error);
 
   const renderListSection = () => {
     if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
@@ -124,10 +151,16 @@ export default function AdminIntegrationsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {AVAILABLE_TYPES.map((t) => {
             const added = countByType(t.id);
+            const connected = hasConnected(t.id);
             return (
               <Link key={t.id} href={`/admin/integrations/add?type=${t.id}`} className="block">
                 <Card className="p-4 h-full hover:border-primary-400 hover:shadow-sm transition-all">
-                  <h3 className="font-semibold text-neutral-800">{t.label}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-neutral-800">{t.label}</h3>
+                    {connected && (
+                      <Badge variant="success" className="shrink-0">Połączono</Badge>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm text-neutral-600">{t.description}</p>
                   <p className="mt-3 text-sm text-neutral-500">
                     {added > 0 ? (

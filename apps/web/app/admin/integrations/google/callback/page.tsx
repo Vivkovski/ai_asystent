@@ -60,7 +60,8 @@ function GoogleOAuthCallback() {
 
       if (res.ok) {
         setStatus("ok");
-        window.location.href = "/admin/integrations";
+        const type = pending.type === "google_sheets" ? "google_sheets" : "google_drive";
+        window.location.href = `/admin/integrations?added=${type}`;
         return;
       }
 
