@@ -78,17 +78,20 @@ export async function createIntegration(
   const now = new Date().toISOString().replace("+00:00", "Z");
   const { data, error } = await supabase
     .from("integrations")
-    .insert({
-      tenant_id: tenantId,
-      type,
-      display_name: displayName ?? type,
-      enabled: true,
-      credentials_encrypted: credentialsEncrypted,
-      config: {},
-      last_tested_at: now,
-      last_error: null,
-      updated_at: now,
-    })
+    .upsert(
+      {
+        tenant_id: tenantId,
+        type,
+        display_name: displayName ?? type,
+        enabled: true,
+        credentials_encrypted: credentialsEncrypted,
+        config: {},
+        last_tested_at: now,
+        last_error: null,
+        updated_at: now,
+      },
+      { onConflict: "tenant_id,type" }
+    )
     .select()
     .single();
   if (error || !data) return { error: "Insert failed" };
