@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const DEMO_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function ensureTenantAndProfile(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   userId: string
 ) {
   await supabase.from("tenants").upsert(
