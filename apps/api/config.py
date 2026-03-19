@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_model: str = "openai/gpt-4o-mini"
 
+    # CORS: comma-separated origins (e.g. https://flixhome-asystent.vercel.app); empty = allow all
+    cors_origins: str = ""
+
     @property
     def supabase_configured(self) -> bool:
         return bool(self.supabase_url and (self.supabase_key or self.supabase_jwt_secret))

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architektura — FlixHome Asystent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1116;
+      --card: #1a1d26;
+      --card-border: #2d3340;
+      --text: #e6e8ec;
+      --text-muted: #8b92a0;
+      --accent: #6366f1;
+      --accent-soft: rgba(99, 102, 241, 0.15);
+      --green: #22c55e;
+      --green-soft: rgba(34, 197, 94, 0.15);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.15);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: var(--text);
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .row {
+      display: flex;
+      align-items: stretch;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .box {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      flex: 1;
+      min-width: 140px;
+    }
+    .box--user {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .box--backend {
+      border-color: var(--green);
+      background: var(--green-soft);
+    }
+    .box--integration {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+    }
+    .box__title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin: 0 0 0.35em 0;
+      color: var(--text);
+    }
+    .box__desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .arrow-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+    .arrow {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+    .flow-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin: 0.5rem 0 0 0;
+    }
+    .step {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .step strong { color: var(--text); }
+    .legend {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--card-border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .legend strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <h1>Jak działa FlixHome Asystent</h1>
+  <p class="subtitle">Prosty obraz architektury: czat, integracje i przepływ danych (dla osób nietechnicznych)</p>
+
+  <div class="diagram">
+    <!-- 1. Użytkownik + Czat -->
+    <section>
+      <div class="row">
+        <div class="box box--user">
+          <p class="box__title">👤 Użytkownik</p>
+          <p class="box__desc">Pracownik firmy zadaje pytanie w języku naturalnym.</p>
+        </div>
+        <div class="box box--user">
+          <p class="box__title">💬 Czat / Panel</p>
+          <p class="box__desc">Aplikacja webowa (Next.js). Wpisujesz pytanie, widzisz odpowiedź i źródła.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow-row">
+      <span class="arrow">↓</span>
+      <span>Pytanie trafia do asystenta</span>
+    </div>
+
+    <!-- 2. Backend – kroki -->
+    <section>
+      <div class="box box--backend">
+        <p class="box__title">🧠 Asystent (backend)</p>
+        <p class="box__desc">Serwis łączy pytanie z Twoimi systemami i buduje odpowiedź. Nie przeszukuje wszystkiego — najpierw rozpoznaje intencję, potem odpytuje tylko wybrane źródła.</p>
+        <div class="flow-steps">
+          <span class="step"><strong>1.</strong> Rozpoznanie intencji</span>
+          <span class="step"><strong>2.</strong> Wybór źródeł</span>
+          <span class="step"><strong>3.</strong> Odpytywanie źródeł</span>
+          <span class="step"><strong>4.</strong> Odpowiedź ze źródłami</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="arrow-row">
+      <span class="arrow">↓</span>
+      <span>Potrzebne dane są pobierane tylko z wybranych integracji</span>
+    </div>
+
+    <!-- 3. Integracje -->
+    <section>
+      <div class="row">
+        <div class="box box--integration">
+          <p class="box__title">📋 Bitrix (CRM)</p>
+          <p class="box__desc">Kontakty, dealy, zadania — dane z CRM Twojej firmy.</p>
+        </div>
+        <div class="box box--integration">
+          <p class="box__title">📁 Google Drive</p>
+          <p class="box__desc">Dokumenty i pliki — wyszukiwanie w Dysku.</p>
+        </div>
+        <div class="box box--integration">
+          <p class="box__title">📊 Google Sheets</p>
+          <p class="box__desc">Arkusze i tabele — dane z arkuszy kalkulacyjnych.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Połączenie -->
+    <section>
+      <div class="row">
+        <div class="box">
+          <p class="box__title">🔐 Supabase</p>
+          <p class="box__desc">Logowanie, dane firm (tenantów), konfiguracja integracji — kto co ma włączone.</p>
+        </div>
+        <div class="box">
+          <p class="box__title">🤖 Claude (AI)</p>
+          <p class="box__desc">Rozpoznaje intencję pytania i układa odpowiedź z zebranych fragmentów, podając źródła.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="legend">
+    <p><strong>Podsumowanie:</strong> Pytanie → Asystent rozpoznaje, o co chodzi → Wybiera tylko relevantne źródła (np. CRM albo Drive) → Pobiera dane z tych systemów → AI układa odpowiedź i cytuje źródła → W czacie widzisz odpowiedź i linki do źródeł. Integracje (Bitrix, Drive, Sheets) są konfigurowane w panelu admina per firma (tenant).</p>
+  </div>
+</body>
+</html>

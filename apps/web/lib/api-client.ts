@@ -1,7 +1,8 @@
 "use client";
 
-// Gdy brak NEXT_PUBLIC_API_URL = ten sam host, backend pod /api/backend (jeden projekt Vercel).
-// W dev ustaw NEXT_PUBLIC_API_URL=http://127.0.0.1:8000. Na Vercel nie ustawiaj = używamy relative /api/backend.
+// NEXT_PUBLIC_API_URL: brak = ten sam host, ścieżka /api/backend (Vercel Services lub proxy).
+// Vercel Services wstrzykuje NEXT_PUBLIC_API_URL=/api/backend. Dwa projekty: ustaw pełny URL API.
+// Dev: NEXT_PUBLIC_API_URL=http://127.0.0.1:8000.
 const getApiBase = (): string => {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (url !== undefined && url !== "") return url;

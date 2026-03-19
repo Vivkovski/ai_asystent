@@ -1,11 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "pnpm --filter @repo/shared build && pnpm --filter web build",
+  "framework": "services",
   "installCommand": "pnpm install",
+  "buildCommand": "pnpm --filter @repo/shared build && pnpm --filter web build",
   "outputDirectory": "apps/web/.next",
-  "functions": {
-    "api/python-api.py": {
+  "experimentalServices": {
+    "web": {
+      "entrypoint": "apps/web",
+      "routePrefix": "/",
+      "framework": "nextjs"
+    },
+    "api": {
+      "entrypoint": "api/backend.py",
+      "routePrefix": "/api/backend",
+      "framework": "fastapi",
       "maxDuration": 30
     }
   }
