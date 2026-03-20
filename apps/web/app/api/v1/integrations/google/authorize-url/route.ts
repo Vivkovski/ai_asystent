@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentContext } from "@/lib/server/auth";
-import { setState } from "@/lib/server/google-oauth";
+import { createState } from "@/lib/server/google-oauth";
 
 const GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const state = crypto.randomUUID().replace(/-/g, "");
-  setState(state);
+  const state = createState();
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);
