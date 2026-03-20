@@ -64,8 +64,11 @@ export default function AdminLayout({
   }, [router]);
 
   useEffect(() => {
+    // Avoid redirect while Next.js is still resolving `pathname`.
+    // Otherwise the OAuth callback route can get unmounted before it renders.
+    if (!pathname) return;
     const isGoogleCallback =
-      pathname?.startsWith("/admin/integrations/google/callback") ?? false;
+      pathname.startsWith("/admin/integrations/google/callback");
     if (mounted && role === "end_user" && !isGoogleCallback) {
       router.replace("/chat");
     }
