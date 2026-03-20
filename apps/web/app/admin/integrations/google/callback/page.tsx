@@ -30,7 +30,12 @@ function GoogleOAuthCallback() {
       return;
     }
 
-    let pending: { mode?: "tenant" | "user"; type?: string; displayName?: string } = {};
+    let pending: {
+      mode?: "tenant" | "user";
+      type?: string;
+      displayName?: string;
+      accessToken?: string;
+    } = {};
     try {
       const raw = typeof window !== "undefined" ? window.sessionStorage.getItem(PENDING_KEY) : null;
       if (raw) pending = JSON.parse(raw);
@@ -41,10 +46,16 @@ function GoogleOAuthCallback() {
 
     const run = async () => {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
+      // Prefer access token captured before the OAuth redirect.
+      // Some environments block auth cookie/session during the redirect.
+      let accessToken: string | null | undefined = pending.accessToken;
+      if (!accessToken) {
+        const { data: { session } } = await supabase.auth.getSession();
+        accessToken = session?.access_token;
+      }
+      if (!accessToken) {
         setStatus("err");
-        setMessage("Zaloguj się ponownie i spróbuj jeszcze raz.");
+        setMessage("Zaloguj się ponownie i spróbuj jeszcze raz (brak sesji po OAuth).");
         return;
       }
 
@@ -59,7 +70,7 @@ function GoogleOAuthCallback() {
           : "/api/v1/admin/integrations/google/callback",
         {
         method: "POST",
-        accessToken: session.access_token,
+        accessToken,
         body: JSON.stringify(body),
         }
       );

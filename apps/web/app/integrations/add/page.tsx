@@ -123,6 +123,9 @@ function AddIntegrationForm() {
             mode: "user",
             type,
             displayName: displayName || undefined,
+            // Supabase auth session may not survive redirects (3rd-party cookies, etc).
+            // Persist the access token for the callback step.
+            accessToken: token,
           })
         );
       } catch {
