@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Button, Input, PageTitle } from "@/components/ui";
+import { Button, Input, Label, PageTitle } from "@/components/ui";
 
 export default function EditIntegrationPage() {
   const router = useRouter();
@@ -21,10 +21,12 @@ export default function EditIntegrationPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [bitrixInputMode, setBitrixInputMode] = useState<"full" | "parts">("full");
+  const [bitrixWebhookMode, setBitrixWebhookMode] = useState<"incoming" | "outgoing">("incoming");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [bitrixDomain, setBitrixDomain] = useState("");
   const [bitrixUserId, setBitrixUserId] = useState("");
   const [bitrixWebhookCode, setBitrixWebhookCode] = useState("");
+  const [bitrixApplicationToken, setBitrixApplicationToken] = useState("");
   const [action, setAction] = useState<"reconnect" | "disable" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,12 +54,17 @@ export default function EditIntegrationPage() {
     setAction("reconnect");
     setError(null);
     const credentials =
-      bitrixInputMode === "full"
-        ? { webhook_url: webhookUrl }
+      bitrixWebhookMode === "incoming"
+        ? bitrixInputMode === "full"
+          ? { webhook_url: webhookUrl }
+          : {
+              bitrix_domain: bitrixDomain.trim(),
+              user_id: bitrixUserId.trim(),
+              webhook_code: bitrixWebhookCode.trim(),
+            }
         : {
-            bitrix_domain: bitrixDomain.trim(),
-            user_id: bitrixUserId.trim(),
-            webhook_code: bitrixWebhookCode.trim(),
+            webhook_mode: "outgoing",
+            application_token: bitrixApplicationToken.trim(),
           };
     const res = await apiFetch(`/api/v1/admin/integrations/${id}`, {
       method: "PATCH",
@@ -129,57 +136,89 @@ export default function EditIntegrationPage() {
         {row.type === "bitrix" && (
           <div>
             <div className="space-y-3">
-              <div className="flex gap-2 items-center">
-                <Button
-                  type="button"
-                  variant={bitrixInputMode === "full" ? "primary" : "secondary"}
-                  size="md"
-                  onClick={() => setBitrixInputMode("full")}
-                  className="!px-3"
+              <div>
+                <Label>Tryb webhooka</Label>
+                <select
+                  value={bitrixWebhookMode}
+                  onChange={(e) =>
+                    setBitrixWebhookMode(e.target.value as "incoming" | "outgoing")
+                  }
+                  className="w-full border border-neutral-200 rounded px-3 py-2"
                 >
-                  Wklej URL
-                </Button>
-                <Button
-                  type="button"
-                  variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
-                  size="md"
-                  onClick={() => setBitrixInputMode("parts")}
-                  className="!px-3"
-                >
-                  Podaj składniki
-                </Button>
+                  <option value="incoming">Przychodzący (Incoming REST / dane do rozmów)</option>
+                  <option value="outgoing">Wychodzący (Outgoing / zdarzenia na nasz endpoint)</option>
+                </select>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Incoming REST służy do pobierania danych (CRM). Outgoing jest dla on-prem, żeby Bitrix wysyłał zdarzenia do Twojej aplikacji.
+                </p>
               </div>
 
-              {bitrixInputMode === "full" ? (
-                <Input
-                  label="URL webhooka Bitrix24 (re-auth)"
-                  type="url"
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                  placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
-                />
+              {bitrixWebhookMode === "incoming" ? (
+                <>
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      type="button"
+                      variant={bitrixInputMode === "full" ? "primary" : "secondary"}
+                      size="md"
+                      onClick={() => setBitrixInputMode("full")}
+                      className="!px-3"
+                    >
+                      Wklej URL
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
+                      size="md"
+                      onClick={() => setBitrixInputMode("parts")}
+                      className="!px-3"
+                    >
+                      Podaj składniki
+                    </Button>
+                  </div>
+
+                  {bitrixInputMode === "full" ? (
+                    <Input
+                      label="URL webhooka Bitrix24 (re-auth)"
+                      type="url"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <Input
+                        label="Domain Bitrix24 (np. my.bitrix24.com)"
+                        type="text"
+                        value={bitrixDomain}
+                        onChange={(e) => setBitrixDomain(e.target.value)}
+                        placeholder="my.bitrix24.com"
+                      />
+                      <Input
+                        label="user_id (twórca webhooka)"
+                        type="text"
+                        value={bitrixUserId}
+                        onChange={(e) => setBitrixUserId(e.target.value)}
+                        placeholder="1"
+                      />
+                      <Input
+                        label="webhook_code (sekretny kod)"
+                        type="text"
+                        value={bitrixWebhookCode}
+                        onChange={(e) => setBitrixWebhookCode(e.target.value)}
+                        placeholder="abc123"
+                        className="font-mono"
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="space-y-3">
                   <Input
-                    label="Domain Bitrix24 (np. my.bitrix24.com)"
+                    label="token aplikacji (application_token) z Outgoing webhooka"
                     type="text"
-                    value={bitrixDomain}
-                    onChange={(e) => setBitrixDomain(e.target.value)}
-                    placeholder="my.bitrix24.com"
-                  />
-                  <Input
-                    label="user_id (twórca webhooka)"
-                    type="text"
-                    value={bitrixUserId}
-                    onChange={(e) => setBitrixUserId(e.target.value)}
-                    placeholder="1"
-                  />
-                  <Input
-                    label="webhook_code (sekretny kod)"
-                    type="text"
-                    value={bitrixWebhookCode}
-                    onChange={(e) => setBitrixWebhookCode(e.target.value)}
-                    placeholder="abc123"
+                    value={bitrixApplicationToken}
+                    onChange={(e) => setBitrixApplicationToken(e.target.value)}
+                    placeholder="y4361mivtxtyo..."
                     className="font-mono"
                   />
                 </div>
@@ -192,9 +231,11 @@ export default function EditIntegrationPage() {
               onClick={handleReconnect}
               disabled={
                 action !== null ||
-                (bitrixInputMode === "full"
-                  ? !webhookUrl.trim()
-                  : !bitrixDomain.trim() || !bitrixUserId.trim() || !bitrixWebhookCode.trim())
+                (bitrixWebhookMode === "incoming"
+                  ? bitrixInputMode === "full"
+                    ? !webhookUrl.trim()
+                    : !bitrixDomain.trim() || !bitrixUserId.trim() || !bitrixWebhookCode.trim()
+                  : !bitrixApplicationToken.trim())
               }
             >
               {action === "reconnect" ? "Zapisywanie…" : "Połącz ponownie"}

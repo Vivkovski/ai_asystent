@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 
 type Conversation = { id: string; title: string | null; created_at: string; updated_at: string };
 type SourceItem = { id: number; type: string; title: string; link: string | null; unavailable?: boolean };
@@ -19,6 +19,20 @@ type Message = {
 };
 
 export default function ChatPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="p-4">
+          <p className="text-neutral-600">Ładowanie…</p>
+        </main>
+      }
+    >
+      <ChatPageInner />
+    </Suspense>
+  );
+}
+
+function ChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const conversationIdFromQuery = searchParams.get("conversationId");

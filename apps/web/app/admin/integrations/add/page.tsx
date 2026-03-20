@@ -25,10 +25,12 @@ function AddIntegrationForm() {
     return "bitrix";
   });
   const [bitrixInputMode, setBitrixInputMode] = useState<"full" | "parts">("full");
+  const [bitrixWebhookMode, setBitrixWebhookMode] = useState<"incoming" | "outgoing">("incoming");
   const [webhookUrl, setWebhookUrl] = useState("");
   const [bitrixDomain, setBitrixDomain] = useState("");
   const [bitrixUserId, setBitrixUserId] = useState("");
   const [bitrixWebhookCode, setBitrixWebhookCode] = useState("");
+  const [bitrixApplicationToken, setBitrixApplicationToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
@@ -51,12 +53,17 @@ function AddIntegrationForm() {
 
   const credentials =
     type === "bitrix"
-      ? bitrixInputMode === "full"
-        ? { webhook_url: webhookUrl }
+      ? bitrixWebhookMode === "incoming"
+        ? bitrixInputMode === "full"
+          ? { webhook_url: webhookUrl }
+          : {
+              bitrix_domain: bitrixDomain.trim(),
+              user_id: bitrixUserId.trim(),
+              webhook_code: bitrixWebhookCode.trim(),
+            }
         : {
-            bitrix_domain: bitrixDomain.trim(),
-            user_id: bitrixUserId.trim(),
-            webhook_code: bitrixWebhookCode.trim(),
+            webhook_mode: "outgoing",
+            application_token: bitrixApplicationToken.trim(),
           }
       : type === "google_drive"
         ? { refresh_token: refreshToken.trim() }
@@ -132,9 +139,11 @@ function AddIntegrationForm() {
 
   const canSave =
     type === "bitrix"
-      ? bitrixInputMode === "full"
-        ? webhookUrl.trim().length > 0
-        : bitrixDomain.trim().length > 0 && bitrixUserId.trim().length > 0 && bitrixWebhookCode.trim().length > 0
+      ? bitrixWebhookMode === "incoming"
+        ? bitrixInputMode === "full"
+          ? webhookUrl.trim().length > 0
+          : bitrixDomain.trim().length > 0 && bitrixUserId.trim().length > 0 && bitrixWebhookCode.trim().length > 0
+        : bitrixApplicationToken.trim().length > 0
       : type === "google_drive" || type === "google_sheets"
         ? refreshToken.trim().length > 0  // manual token path
         : false;
@@ -169,59 +178,93 @@ function AddIntegrationForm() {
         />
         {type === "bitrix" && (
           <div className="space-y-3">
-            <div className="flex gap-2 items-center">
-              <Button
-                type="button"
-                variant={bitrixInputMode === "full" ? "primary" : "secondary"}
-                size="md"
-                onClick={() => setBitrixInputMode("full")}
-                className="!px-3"
+            <div>
+              <Label>Tryb webhooka</Label>
+              <select
+                value={bitrixWebhookMode}
+                onChange={(e) => setBitrixWebhookMode(e.target.value as "incoming" | "outgoing")}
+                className="w-full border border-neutral-200 rounded px-3 py-2"
               >
-                Wklej URL
-              </Button>
-              <Button
-                type="button"
-                variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
-                size="md"
-                onClick={() => setBitrixInputMode("parts")}
-                className="!px-3"
-              >
-                Podaj składniki
-              </Button>
+                <option value="incoming">Przychodzący (Incoming REST / dane do rozmów)</option>
+                <option value="outgoing">Wychodzący (Outgoing / zdarzenia na nasz endpoint)</option>
+              </select>
+              <p className="text-xs text-neutral-500 mt-1">
+                Incoming REST służy do pobierania danych (CRM). Outgoing jest dla on-prem, żeby Bitrix wysyłał zdarzenia do Twojej aplikacji.
+              </p>
             </div>
 
-            {bitrixInputMode === "full" ? (
-              <Input
-                label="URL webhooka Bitrix24 (Incoming REST)"
-                type="url"
-                value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-                placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
-              />
+            {bitrixWebhookMode === "incoming" ? (
+              <>
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant={bitrixInputMode === "full" ? "primary" : "secondary"}
+                    size="md"
+                    onClick={() => setBitrixInputMode("full")}
+                    className="!px-3"
+                  >
+                    Wklej URL
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
+                    size="md"
+                    onClick={() => setBitrixInputMode("parts")}
+                    className="!px-3"
+                  >
+                    Podaj składniki
+                  </Button>
+                </div>
+
+                {bitrixInputMode === "full" ? (
+                  <Input
+                    label="URL webhooka Bitrix24 (Incoming REST)"
+                    type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    <Input
+                      label="Domain Bitrix24 (np. my.bitrix24.com)"
+                      type="text"
+                      value={bitrixDomain}
+                      onChange={(e) => setBitrixDomain(e.target.value)}
+                      placeholder="my.bitrix24.com"
+                    />
+                    <Input
+                      label="user_id (twórca webhooka)"
+                      type="text"
+                      value={bitrixUserId}
+                      onChange={(e) => setBitrixUserId(e.target.value)}
+                      placeholder="1"
+                    />
+                    <Input
+                      label="webhook_code (sekretny kod)"
+                      type="text"
+                      value={bitrixWebhookCode}
+                      onChange={(e) => setBitrixWebhookCode(e.target.value)}
+                      placeholder="abc123"
+                      className="font-mono"
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <div className="space-y-3">
                 <Input
-                  label="Domain Bitrix24 (np. my.bitrix24.com)"
+                  label="token aplikacji (application_token) z Outgoing webhooka"
                   type="text"
-                  value={bitrixDomain}
-                  onChange={(e) => setBitrixDomain(e.target.value)}
-                  placeholder="my.bitrix24.com"
-                />
-                <Input
-                  label="user_id (twórca webhooka)"
-                  type="text"
-                  value={bitrixUserId}
-                  onChange={(e) => setBitrixUserId(e.target.value)}
-                  placeholder="1"
-                />
-                <Input
-                  label="webhook_code (sekretny kod)"
-                  type="text"
-                  value={bitrixWebhookCode}
-                  onChange={(e) => setBitrixWebhookCode(e.target.value)}
-                  placeholder="abc123"
+                  value={bitrixApplicationToken}
+                  onChange={(e) => setBitrixApplicationToken(e.target.value)}
+                  placeholder="y4361mivtxtyo..."
                   className="font-mono"
                 />
+                <p className="text-xs text-neutral-500">
+                  W Bitrix w Outgoing webhook wklejasz URL naszego endpointu: <br />
+                  <code className="font-mono">/api/v1/webhooks/bitrix/outgoing/&lt;application_token&gt;</code>
+                </p>
               </div>
             )}
           </div>

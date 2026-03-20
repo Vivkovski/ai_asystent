@@ -2,7 +2,14 @@
  * Bitrix24 connector: inbound REST via Bitrix "Incoming webhook" URL.
  *
  * Credentials expected in config._credentials:
+ * Incoming mode:
  * - webhook_url: string (e.g. https://<domain>.bitrix24.com/rest/<user_id>/<webhook_code>/)
+ * - OR webhook parts: bitrix_domain + user_id + webhook_code
+ *
+ * Outgoing mode (events only):
+ * - webhook_mode: "outgoing"
+ * - application_token: string
+ * Outgoing mode does not support REST queries for chat; it only allows storing the configuration.
  *
  * Server-only connector.
  */
@@ -25,6 +32,11 @@ function getCredentials(config: Record<string, unknown>): Record<string, unknown
 
 function getWebhookUrl(config: Record<string, unknown>): string {
   const creds = getCredentials(config);
+
+  const mode = String(creds.webhook_mode ?? "incoming").toLowerCase();
+  if (mode === "outgoing") {
+    throw new Error("Outgoing webhook configured, but Incoming REST webhook is required for Bitrix adapter queries.");
+  }
 
   // Option A (current): full inbound webhook URL
   const webhookUrl = creds.webhook_url;
@@ -133,6 +145,22 @@ function mapContact(c: any): Fragment {
 
 export class BitrixAdapter {
   async fetch(input: ConnectorInput): Promise<ConnectorOutput> {
+    const creds = getCredentials(input.config);
+    const mode = String(creds.webhook_mode ?? "incoming").toLowerCase();
+    if (mode === "outgoing") {
+      return {
+        success: false,
+        fragments: [],
+        source_metadata: {
+          source_id: "bitrix",
+          type: "crm",
+          title: "Bitrix24",
+          link: null,
+        },
+        error: "Outgoing webhook configured (events). Incoming REST webhook is required to read CRM data.",
+      };
+    }
+
     const maxPerSource = input.limits.max_fragments_per_source;
     const limit = Math.max(1, Math.min(maxPerSource, 20));
 
@@ -195,6 +223,14 @@ export class BitrixAdapter {
       title: "Bitrix24",
       link: null,
     };
+
+    const creds = getCredentials(config);
+    const mode = String(creds.webhook_mode ?? "incoming").toLowerCase();
+    if (mode === "outgoing") {
+      // Events-only configuration. We can't verify REST permissions here.
+      // We'll accept the token as valid and let fetch() explain limitations.
+      return { ok: true };
+    }
 
     let webhookUrl: string;
     try {
