@@ -232,7 +232,7 @@ export default function ChatPage() {
         </div>
         <nav className="border-t border-neutral-100 p-2 space-y-0.5">
           <Link
-            href="/admin/integrations"
+            href="/integrations"
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
           >
             <span className="text-neutral-500 aria-hidden">⚙</span>

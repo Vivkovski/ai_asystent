@@ -34,7 +34,7 @@ export async function runAsk(
   const userMsgId = String(userMsg.id);
 
   const intent = await classifyIntent(content);
-  const sourceIds = await getSourcesForIntent(tenantId, intent);
+  const sourceIds = await getSourcesForIntent(tenantId, userId, intent);
 
   if (sourceIds.length === 0) {
     await chatDomain.updateMessage(userMsgId, { status: "failed" });
@@ -47,7 +47,7 @@ export async function runAsk(
     return response(assistantMsg, [], null);
   }
 
-  const outputs = await fetchAll(sourceIds, tenantId, content, DEFAULT_LIMITS);
+  const outputs = await fetchAll(sourceIds, tenantId, userId, content, DEFAULT_LIMITS);
   const allFragments: [string, string][] = [];
   let idx = 1;
   for (const out of outputs) {

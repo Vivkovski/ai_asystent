@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedPaths = ["/chat", "/admin"];
+const protectedPaths = ["/chat", "/admin", "/integrations"];
 const authPath = "/login";
 
 export async function middleware(request: NextRequest) {
@@ -60,5 +60,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/admin/:path*", "/login"],
+  matcher: ["/chat/:path*", "/admin/:path*", "/integrations/:path*", "/login"],
 };

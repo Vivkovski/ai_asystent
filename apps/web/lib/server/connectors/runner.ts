@@ -23,6 +23,7 @@ function errorMetadata(sourceId: string): ConnectorOutput["source_metadata"] {
 export async function fetchOne(
   sourceId: string,
   tenantId: string,
+  userId: string,
   queryText: string,
   limits: ConnectorLimits = DEFAULT_LIMITS
 ): Promise<ConnectorOutput> {
@@ -35,7 +36,7 @@ export async function fetchOne(
       error: "Adapter not found",
     };
   }
-  const config = await loadConfig(tenantId, sourceId);
+  const config = await loadConfig(tenantId, userId, sourceId);
   if (!config) {
     return {
       success: false,
@@ -72,11 +73,12 @@ export async function fetchOne(
 export async function fetchAll(
   sourceIds: string[],
   tenantId: string,
+  userId: string,
   queryText: string,
   limits: ConnectorLimits = DEFAULT_LIMITS
 ): Promise<ConnectorOutput[]> {
   const results = await Promise.all(
-    sourceIds.map((id) => fetchOne(id, tenantId, queryText, limits))
+    sourceIds.map((id) => fetchOne(id, tenantId, userId, queryText, limits))
   );
   return results;
 }

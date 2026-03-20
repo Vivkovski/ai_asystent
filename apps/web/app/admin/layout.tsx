@@ -64,10 +64,12 @@ export default function AdminLayout({
   }, [router]);
 
   useEffect(() => {
-    if (mounted && role === "end_user") {
+    const isGoogleCallback =
+      pathname?.startsWith("/admin/integrations/google/callback") ?? false;
+    if (mounted && role === "end_user" && !isGoogleCallback) {
       router.replace("/chat");
     }
-  }, [mounted, role, router]);
+  }, [mounted, role, router, pathname]);
 
   if (!mounted) {
     return (
