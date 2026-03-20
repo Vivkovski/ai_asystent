@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, Input, PageTitle } from "@/components/ui";
+import ConversationSidebar from "@/components/ConversationSidebar";
 
 type IntegrationRow = {
   id: string;
@@ -116,61 +117,75 @@ export default function EditIntegrationPage() {
     return <p className="text-neutral-600">{row === null ? "Nie znaleziono" : "Ładowanie…"}</p>;
 
   return (
-    <div className="max-w-lg">
-      <Link href="/integrations" className="text-primary-600 text-sm hover:underline mb-4 inline-block">
-        ← Lista integracji
-      </Link>
+    <div className="flex min-h-screen bg-neutral-50">
+      <ConversationSidebar />
+      <div className="flex-1 overflow-auto p-4">
+        <div className="max-w-lg mx-auto">
+          <Link
+            href="/integrations"
+            className="text-primary-600 text-sm hover:underline mb-4 inline-block"
+          >
+            ← Lista integracji
+          </Link>
 
-      <PageTitle
-        title={`Integracja: ${row.display_name || row.type}`}
-        description={`Typ: ${row.type} · Status: ${row.enabled ? "Włączona" : "Wyłączona"}`}
-        className="mb-4"
-      />
+          <PageTitle
+            title={`Integracja: ${row.display_name || row.type}`}
+            description={`Typ: ${row.type} · Status: ${
+              row.enabled ? "Włączona" : "Wyłączona"
+            }`}
+            className="mb-4"
+          />
 
-      {row.last_error && <p className="text-sm text-error mb-2">Ostatni błąd: {row.last_error}</p>}
-      {error && <p className="text-sm text-error mb-2">{error}</p>}
+          {row.last_error && (
+            <p className="text-sm text-error mb-2">
+              Ostatni błąd: {row.last_error}
+            </p>
+          )}
+          {error && <p className="text-sm text-error mb-2">{error}</p>}
 
-      <div className="space-y-4">
-        {row.type === "bitrix" && (
-          <div>
-            <Input
-              label="URL webhooka (re-auth)"
-              type="url"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://..."
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-2"
-              onClick={handleReconnect}
-              disabled={action !== null || !webhookUrl.trim()}
-            >
-              {action === "reconnect" ? "Zapisywanie…" : "Połącz ponownie"}
-            </Button>
+          <div className="space-y-4">
+            {row.type === "bitrix" && (
+              <div>
+                <Input
+                  label="URL webhooka (re-auth)"
+                  type="url"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="mt-2"
+                  onClick={handleReconnect}
+                  disabled={action !== null || !webhookUrl.trim()}
+                >
+                  {action === "reconnect" ? "Zapisywanie…" : "Połącz ponownie"}
+                </Button>
+              </div>
+            )}
+
+            {row.enabled ? (
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleDisable}
+                disabled={action !== null}
+              >
+                {action === "disable" ? "…" : "Wyłącz"}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="success"
+                onClick={handleEnable}
+                disabled={action !== null}
+              >
+                Włącz
+              </Button>
+            )}
           </div>
-        )}
-
-        {row.enabled ? (
-          <Button
-            type="button"
-            variant="danger"
-            onClick={handleDisable}
-            disabled={action !== null}
-          >
-            {action === "disable" ? "…" : "Wyłącz"}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="success"
-            onClick={handleEnable}
-            disabled={action !== null}
-          >
-            Włącz
-          </Button>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Button, Input, Label, PageTitle } from "@/components/ui";
+import ConversationSidebar from "@/components/ConversationSidebar";
 
 const TYPES = [
   { id: "bitrix", label: "Bitrix24" },
@@ -261,9 +262,14 @@ function AddIntegrationForm() {
 
 export default function AddIntegrationPage() {
   return (
-    <Suspense fallback={<p className="text-neutral-600">Ładowanie…</p>}>
-      <AddIntegrationForm />
-    </Suspense>
+    <div className="flex min-h-screen bg-neutral-50">
+      <ConversationSidebar />
+      <div className="flex-1 overflow-auto p-4">
+        <Suspense fallback={<p className="text-neutral-600">Ładowanie…</p>}>
+          <AddIntegrationForm />
+        </Suspense>
+      </div>
+    </div>
   );
 }
 

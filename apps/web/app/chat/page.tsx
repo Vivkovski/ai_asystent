@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { apiFetch } from "@/lib/api-client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 
@@ -20,6 +20,8 @@ type Message = {
 
 export default function ChatPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const conversationIdFromQuery = searchParams.get("conversationId");
   const [mounted, setMounted] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -77,6 +79,14 @@ export default function ChatPage() {
     else setMessages([]);
   }, [currentId, token, fetchMessages]);
 
+  useEffect(() => {
+    // When opening `/chat?conversationId=...` (e.g. from integrations sidebar),
+    // sync current conversation id once after mount.
+    if (mounted && conversationIdFromQuery && !currentId) {
+      setCurrentId(conversationIdFromQuery);
+    }
+  }, [mounted, conversationIdFromQuery, currentId]);
+
   const handleNewConversation = () => {
     if (!token) return;
     setLoading(true);
@@ -106,6 +116,7 @@ export default function ChatPage() {
         setCurrentId(conv.id);
         setConversations((prev) => [conv, ...prev]);
         setMessages([]);
+        router.replace(`/chat?conversationId=${conv.id}`);
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Wystąpił błąd"))
       .finally(() => setLoading(false));
@@ -145,6 +156,7 @@ export default function ChatPage() {
       convId = conv.id;
       setCurrentId(convId);
       setConversations((prev) => [conv, ...prev]);
+      router.replace(`/chat?conversationId=${convId}`);
     }
     setInput("");
     setMessages((prev) => [...prev, { id: "", role: "user", content: text, created_at: new Date().toISOString() }]);
@@ -221,7 +233,10 @@ export default function ChatPage() {
               <li key={c.id}>
                 <button
                   type="button"
-                  onClick={() => setCurrentId(c.id)}
+                  onClick={() => {
+                    setCurrentId(c.id);
+                    router.replace(`/chat?conversationId=${c.id}`);
+                  }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm truncate transition-colors ${currentId === c.id ? "bg-neutral-100 text-neutral-900 font-medium" : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"}`}
                 >
                   {c.title || "Nowa rozmowa"}

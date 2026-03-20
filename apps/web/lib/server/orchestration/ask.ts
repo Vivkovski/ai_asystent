@@ -12,6 +12,14 @@ import { fetchAll } from "../connectors/runner";
 import { synthesizeAnswer } from "../llm/openrouter";
 import { DEFAULT_LIMITS } from "../connectors/contract";
 
+function toConversationTitle(input: string): string {
+  const oneLine = input.replace(/\s+/g, " ").trim();
+  if (!oneLine) return "";
+  const maxLen = 80;
+  if (oneLine.length <= maxLen) return oneLine;
+  return `${oneLine.slice(0, maxLen)}...`;
+}
+
 function isBitrixConnectionQuestion(question: string): boolean {
   const q = question.toLowerCase();
   const hasBitrix = q.includes("bitrix");
@@ -49,6 +57,20 @@ export async function runAsk(
     "pending"
   );
   const userMsgId = String(userMsg.id);
+
+  // Ensure sidebar title is always based on the first user message (not a static fallback).
+  const currentTitle = conv && (conv as Record<string, unknown>).title;
+  const hasMeaningfulTitle =
+    typeof currentTitle === "string" && currentTitle.trim().length > 0;
+  if (!hasMeaningfulTitle) {
+    const convId = conversationId as string;
+    const firstUser = await chatDomain.getFirstUserMessage(convId);
+    const raw = firstUser?.content ?? content;
+    const candidate = toConversationTitle(raw);
+    if (candidate) {
+      await chatDomain.updateConversationTitle(convId, candidate);
+    }
+  }
 
   // Special-case: connection/health questions should not rely on LLM + mock fragments.
   // We answer deterministically from the integration status stored in Supabase.

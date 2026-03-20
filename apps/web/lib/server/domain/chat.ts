@@ -15,6 +15,14 @@ function serialize<T extends Record<string, unknown>>(row: T): T {
   return d as T;
 }
 
+function toConversationTitle(input: string): string {
+  const oneLine = input.replace(/\s+/g, " ").trim();
+  if (!oneLine) return "";
+  const maxLen = 80;
+  if (oneLine.length <= maxLen) return oneLine;
+  return `${oneLine.slice(0, maxLen)}...`;
+}
+
 export async function createConversation(
   tenantId: string,
   userId: string,
@@ -76,7 +84,34 @@ export async function listConversations(
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(limit);
-  return (data ?? []).map((row) => serialize(row as Record<string, unknown>));
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+
+  // If title is empty, derive it from the first user message content.
+  // This avoids UI fallback placeholders ("Nowa rozmowa") for existing conversations.
+  const needsTitle = rows
+    .filter((r) => typeof r.title !== "string" || r.title.trim().length === 0)
+    .map((r) => String(r.id));
+
+  const firstUserByConversation = new Map<string, string>();
+  await Promise.all(
+    needsTitle.map(async (convId) => {
+      const firstUser = await getFirstUserMessage(convId);
+      if (firstUser) firstUserByConversation.set(convId, firstUser.content);
+    })
+  );
+
+  return rows.map((row) => {
+    const convId = String(row.id);
+    if (typeof row.title === "string" && row.title.trim().length > 0) {
+      return serialize(row as Record<string, unknown>);
+    }
+    const raw = firstUserByConversation.get(convId);
+    const derived = raw ? toConversationTitle(raw) : "";
+    return serialize({
+      ...row,
+      title: derived || null,
+    } as Record<string, unknown>);
+  });
 }
 
 export async function createMessage(
@@ -128,6 +163,35 @@ export async function getMessages(
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
   return (data ?? []).map((row) => serialize(row as Record<string, unknown>));
+}
+
+export async function getFirstUserMessage(
+  conversationId: string
+): Promise<{ id: string; content: string } | null> {
+  const supabase = createServerSupabaseClient();
+  const { data } = await supabase
+    .from("messages")
+    .select("id, content")
+    .eq("conversation_id", conversationId)
+    .eq("role", "user")
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  const row = data?.[0] as { id?: string; content?: string } | undefined;
+  if (!row?.id || typeof row.content !== "string") return null;
+  return { id: String(row.id), content: row.content };
+}
+
+export async function updateConversationTitle(
+  conversationId: string,
+  title: string
+): Promise<void> {
+  const supabase = createServerSupabaseClient();
+  const now = new Date().toISOString().replace("+00:00", "Z");
+  await supabase
+    .from("conversations")
+    .update({ title, updated_at: now })
+    .eq("id", conversationId);
 }
 
 export async function insertAnswerSources(
