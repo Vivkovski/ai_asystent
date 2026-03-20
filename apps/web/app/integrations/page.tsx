@@ -153,60 +153,76 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div>
-      <PageTitle
-        title="Integracje"
-        description="Twoje własne integracje. Jeśli tenant ma aktywną integrację tego typu, ona ma pierwszeństwo."
-      />
+    <div className="min-h-screen bg-neutral-50">
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <PageTitle
+          title="Integracje"
+          description="Twoje własne integracje. Jeśli tenant ma aktywną integrację tego typu, ona ma pierwszeństwo."
+        />
 
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-neutral-800 mb-3">Dostępne integracje</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {AVAILABLE_TYPES.map((t) => {
-            const userRows = userIntegrationsByType(t.id);
-            const added = userRows.length;
-            const userConnected = userRows.some((i) => i.enabled && !i.last_error);
-            const tenantEnabled = tenantEnabledTypes.has(t.id);
+        <section className="mt-8 mb-8">
+          <h2 className="text-lg font-semibold text-neutral-800 mb-3">
+            Dostępne integracje
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {AVAILABLE_TYPES.map((t) => {
+              const userRows = userIntegrationsByType(t.id);
+              const added = userRows.length;
+              const userConnected = userRows.some(
+                (i) => i.enabled && !i.last_error
+              );
+              const tenantEnabled = tenantEnabledTypes.has(t.id);
 
-            return (
-              <Link key={t.id} href={`/integrations/add?type=${t.id}`} className="block">
-                <Card className="p-4 h-full hover:border-primary-400 hover:shadow-sm transition-all">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-neutral-800">{t.label}</h3>
-                    {tenantEnabled ? (
-                      <Badge variant="success" className="shrink-0">
-                        Tenant aktywny
-                      </Badge>
-                    ) : userConnected ? (
-                      <Badge variant="success" className="shrink-0">
-                        Połączono
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 text-sm text-neutral-600">{t.description}</p>
-                  <p className="mt-3 text-sm text-neutral-500">
-                    {added > 0 ? (
-                      <span className="text-primary-600">
-                        Masz {added} {added === 1 ? "integrację" : "integracje"}.
-                      </span>
-                    ) : (
-                      "Nie dodałeś jeszcze."
-                    )}
-                  </p>
-                  <span className="mt-2 inline-block text-primary-600 text-sm font-medium">
-                    Dodaj / zmień swoje ustawienia →
-                  </span>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+              return (
+                <Link
+                  key={t.id}
+                  href={`/integrations/add?type=${t.id}`}
+                  className="block"
+                >
+                  <Card className="p-4 h-full hover:border-primary-400 hover:shadow-sm transition-all">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-neutral-800">
+                        {t.label}
+                      </h3>
+                      {tenantEnabled ? (
+                        <Badge variant="success" className="shrink-0">
+                          Tenant aktywny
+                        </Badge>
+                      ) : userConnected ? (
+                        <Badge variant="success" className="shrink-0">
+                          Połączono
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-neutral-600">
+                      {t.description}
+                    </p>
+                    <p className="mt-3 text-sm text-neutral-500">
+                      {added > 0 ? (
+                        <span className="text-primary-600">
+                          Masz {added} {added === 1 ? "integrację" : "integracje"}.
+                        </span>
+                      ) : (
+                        "Nie dodałeś jeszcze."
+                      )}
+                    </p>
+                    <span className="mt-2 inline-block text-primary-600 text-sm font-medium">
+                      Dodaj / zmień swoje ustawienia →
+                    </span>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
-      <section>
-        <h2 className="text-lg font-semibold text-neutral-800 mb-3">Twoje integracje</h2>
-        {renderUserList()}
-      </section>
+        <section>
+          <h2 className="text-lg font-semibold text-neutral-800 mb-3">
+            Twoje integracje
+          </h2>
+          {renderUserList()}
+        </section>
+      </div>
     </div>
   );
 }
