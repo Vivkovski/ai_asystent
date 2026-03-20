@@ -53,3 +53,25 @@ export async function PATCH(
   }
   return NextResponse.json(out.row);
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const result = await getCurrentContext(request);
+  if ("response" in result) return result.response;
+  const { context } = result;
+  const forbidden = requireAdmin(context);
+  if (forbidden) return forbidden.response;
+
+  const { id } = await params;
+
+  const out = await integrationsDomain.deleteIntegration(context.tenantId, id);
+
+  if ("error" in out) {
+    const status = out.error === "Not found" ? 404 : 422;
+    return NextResponse.json({ code: "INTEGRATION_ERROR", message: out.error }, { status });
+  }
+
+  return NextResponse.json({ ok: true });
+}

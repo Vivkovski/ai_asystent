@@ -215,6 +215,36 @@ export async function updateUserIntegration(
   return { row: out };
 }
 
+export async function deleteUserIntegration(
+  tenantId: string,
+  userId: string,
+  integrationId: string
+): Promise<{ row: Record<string, unknown> } | { error: string }> {
+  const supabase = createServerSupabaseClient();
+
+  const { data: existing } = await supabase
+    .from("user_integrations")
+    .select("id, type, display_name, enabled, last_tested_at, last_error, created_at, updated_at")
+    .eq("id", integrationId)
+    .eq("tenant_id", tenantId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!existing) return { error: "Not found" };
+
+  const { error } = await supabase
+    .from("user_integrations")
+    .delete()
+    .eq("id", integrationId)
+    .eq("tenant_id", tenantId)
+    .eq("user_id", userId);
+
+  if (error) return { error: "Delete failed" };
+
+  const out = serialize(existing as Record<string, unknown>);
+  return { row: out };
+}
+
 export async function getUserIntegration(
   tenantId: string,
   userId: string,
@@ -232,6 +262,33 @@ export async function getUserIntegration(
     .maybeSingle();
 
   return data ? serialize(data as Record<string, unknown>) : null;
+}
+
+export async function deleteIntegration(
+  tenantId: string,
+  integrationId: string
+): Promise<{ row: Record<string, unknown> } | { error: string }> {
+  const supabase = createServerSupabaseClient();
+
+  const { data: existing } = await supabase
+    .from("integrations")
+    .select("id, type, display_name, enabled, last_tested_at, last_error, created_at, updated_at")
+    .eq("id", integrationId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!existing) return { error: "Not found" };
+
+  const { error } = await supabase
+    .from("integrations")
+    .delete()
+    .eq("id", integrationId)
+    .eq("tenant_id", tenantId);
+
+  if (error) return { error: "Delete failed" };
+
+  const out = serialize(existing as Record<string, unknown>);
+  return { row: out };
 }
 
 export async function createIntegration(

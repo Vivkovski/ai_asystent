@@ -28,6 +28,7 @@ export default function EditIntegrationPage() {
   const [bitrixWebhookCode, setBitrixWebhookCode] = useState("");
   const [bitrixApplicationToken, setBitrixApplicationToken] = useState("");
   const [action, setAction] = useState<"reconnect" | "disable" | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "loading" | "err">("idle");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +116,30 @@ export default function EditIntegrationPage() {
       setAction(null);
       router.refresh();
     } else setAction(null);
+  };
+
+  const handleDelete = async () => {
+    if (!token || !id) return;
+    const ok = window.confirm("Usunąć integrację? Tej operacji nie da się cofnąć.");
+    if (!ok) return;
+
+    setDeleteStatus("loading");
+    setError(null);
+
+    const res = await apiFetch(`/api/v1/admin/integrations/${id}`, {
+      method: "DELETE",
+      accessToken: token,
+    });
+
+    if (res.ok) {
+      router.push("/admin/integrations");
+      router.refresh();
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    setDeleteStatus("err");
+    setError(data?.detail || data?.message || res.statusText);
   };
 
   if (!token) return <p className="text-neutral-600">Ładowanie…</p>;
@@ -247,7 +272,7 @@ export default function EditIntegrationPage() {
             type="button"
             variant="danger"
             onClick={handleDisable}
-            disabled={action !== null}
+            disabled={action !== null || deleteStatus === "loading"}
           >
             {action === "disable" ? "…" : "Wyłącz"}
           </Button>
@@ -256,11 +281,20 @@ export default function EditIntegrationPage() {
             type="button"
             variant="success"
             onClick={handleEnable}
-            disabled={action !== null}
+            disabled={action !== null || deleteStatus === "loading"}
           >
             Włącz
           </Button>
         )}
+
+        <Button
+          type="button"
+          variant="danger"
+          onClick={handleDelete}
+          disabled={action !== null || deleteStatus === "loading"}
+        >
+          {deleteStatus === "loading" ? "Usuwanie…" : "Usuń"}
+        </Button>
       </div>
     </div>
   );
