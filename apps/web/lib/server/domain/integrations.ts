@@ -106,14 +106,26 @@ export async function createUserIntegration(
   displayName?: string | null
 ): Promise<{ row: Record<string, unknown> } | { error: string }> {
   if (!["bitrix", "google_drive", "google_sheets"].includes(type)) {
+    console.warn("createUserIntegration: invalid type", { tenantId, userId, type });
     return { error: "Invalid type" };
   }
   const adapter = getAdapter(type);
-  if (!adapter) return { error: "Connector not available" };
+  if (!adapter) {
+    console.warn("createUserIntegration: connector not available", { tenantId, userId, type });
+    return { error: "Connector not available" };
+  }
 
   const config = { _credentials: credentials };
   const test = await adapter.testConnection(config);
-  if (!test.ok) return { error: test.error ?? "Test failed" };
+  if (!test.ok) {
+    console.warn("createUserIntegration: testConnection failed", {
+      tenantId,
+      userId,
+      type,
+      error: test.error ?? "Test failed",
+    });
+    return { error: test.error ?? "Test failed" };
+  }
 
   let credentialsEncrypted: string;
   try {
@@ -298,13 +310,24 @@ export async function createIntegration(
   displayName?: string | null
 ): Promise<{ row: Record<string, unknown> } | { error: string }> {
   if (!["bitrix", "google_drive", "google_sheets"].includes(type)) {
+    console.warn("createIntegration: invalid type", { tenantId, type });
     return { error: "Invalid type" };
   }
   const adapter = getAdapter(type);
-  if (!adapter) return { error: "Connector not available" };
+  if (!adapter) {
+    console.warn("createIntegration: connector not available", { tenantId, type });
+    return { error: "Connector not available" };
+  }
   const config = { _credentials: credentials };
   const test = await adapter.testConnection(config);
-  if (!test.ok) return { error: test.error ?? "Test failed" };
+  if (!test.ok) {
+    console.warn("createIntegration: testConnection failed", {
+      tenantId,
+      type,
+      error: test.error ?? "Test failed",
+    });
+    return { error: test.error ?? "Test failed" };
+  }
   let credentialsEncrypted: string;
   try {
     credentialsEncrypted = encrypt(JSON.stringify(credentials));

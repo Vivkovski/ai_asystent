@@ -30,6 +30,13 @@ export async function GET(request: NextRequest) {
     return tenant ? [tenant] : [];
   });
 
+  console.info("GET /api/v1/integrations", {
+    tenantId: context.tenantId,
+    userId: context.userId,
+    count: items.length,
+    types: items.map((i) => ({ type: String(i.type), enabled: i.enabled })),
+  });
+
   return NextResponse.json({ items, tenant_items: tenantItems, user_items: userItems });
 }
 

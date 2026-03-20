@@ -33,6 +33,22 @@ export async function POST(request: NextRequest) {
     );
   }
   if (!consumeState(state)) {
+    console.error("Google integration OAuth callback failed: invalid/expired state", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        null,
+        { provider: "google", stage: "state_invalid" }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       { detail: "Invalid or expired state" },
       { status: 400 }
@@ -42,6 +58,22 @@ export async function POST(request: NextRequest) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim();
   if (!clientId || !clientSecret || !redirectUri) {
+    console.error("Google OAuth not configured (admin callback)", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        null,
+        { provider: "google", stage: "oauth_not_configured" }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       { detail: "Google OAuth not configured" },
       { status: 503 }
@@ -79,6 +111,24 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
+    console.error("Google token exchange failed (admin callback)", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+      status: tokenRes.status,
+      msg: msg.slice(0, 200),
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        null,
+        { provider: "google", stage: "token_exchange_failed", status: tokenRes.status }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       { detail: `Token exchange failed: ${msg.slice(0, 200)}` },
       { status: 400 }
@@ -87,6 +137,22 @@ export async function POST(request: NextRequest) {
   const tokenData = (await tokenRes.json()) as { refresh_token?: string };
   const refreshToken = tokenData.refresh_token;
   if (!refreshToken) {
+    console.error("Google did not return refresh_token (admin callback)", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        null,
+        { provider: "google", stage: "refresh_token_missing" }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       {
         detail:
@@ -104,6 +170,24 @@ export async function POST(request: NextRequest) {
     body.display_name ?? null
   );
   if ("error" in out) {
+    console.warn("Google integration createIntegration failed (admin callback)", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+      type: integrationType,
+      error: out.error,
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        integrationType,
+        { provider: "google", stage: "create_integration_failed", error: out.error }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       { detail: out.error },
       { status: 400 }

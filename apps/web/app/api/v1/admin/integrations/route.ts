@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     );
   }
   const items = await integrationsDomain.listIntegrations(context.tenantId);
+  console.info("GET /api/v1/admin/integrations", {
+    tenantId: context.tenantId,
+    count: items.length,
+    types: items.map((i) => ({ type: String(i.type), enabled: i.enabled })),
+  });
   return NextResponse.json({ items }, {
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",
