@@ -79,8 +79,14 @@ function GoogleOAuthCallback() {
 
       if (res.ok) {
         setStatus("ok");
-        const type = pending.type === "google_sheets" ? "google_sheets" : "google_drive";
-        const base = isUserFlow ? "/integrations" : "/admin/integrations";
+        const data = await res.json().catch(() => ({}));
+        const createdScope = data?.created_scope;
+        const integrationType =
+          data?.integration_type ?? data?.integration?.type ?? pending.type;
+
+        const type =
+          integrationType === "google_sheets" ? "google_sheets" : "google_drive";
+        const base = createdScope === "user" ? "/integrations" : "/admin/integrations";
         window.location.href = `${base}?added=${type}`;
         return;
       }

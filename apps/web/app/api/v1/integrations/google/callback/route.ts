@@ -1,51 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentContext } from "@/lib/server/auth";
+import type { CurrentContext } from "@/lib/server/auth";
 import { consumeState } from "@/lib/server/google-oauth";
 import * as integrationsDomain from "@/lib/server/domain/integrations";
 import { logAudit } from "@/lib/server/domain/audit";
 
-export async function POST(request: NextRequest) {
-  const result = await getCurrentContext(request);
-  if ("response" in result) return result.response;
-  const { context } = result;
+function integrationTypeFromRequest(type?: string): "google_drive" | "google_sheets" {
+  return type === "google_sheets" ? "google_sheets" : "google_drive";
+}
 
-  // Make it explicit in DB logs whether the callback endpoint is ever reached.
-  // This helps distinguish "callback not hit" from "OAuth state/token issues".
-  try {
-    await logAudit(
-      context.tenantId,
-      context.userId,
-      "google_oauth_callback_reached",
-      "integration",
-      null,
-      { provider: "google", route: "integrations/google/callback" }
-    );
-  } catch {
-    //
-  }
-
-  let body: {
-    code?: string;
-    state?: string;
-    display_name?: string;
-    type?: string;
-  };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { detail: "code and state required" },
-      { status: 400 }
-    );
-  }
-
-  const { code, state } = body;
-  if (!code || !state) {
-    return NextResponse.json(
-      { detail: "code and state required" },
-      { status: 400 }
-    );
-  }
+async function handleCallback(args: {
+  context: CurrentContext;
+  code: string;
+  state: string;
+  display_name?: string;
+  type?: string;
+}) {
+  const { context, code, state, display_name, type } = args;
 
   if (!consumeState(state)) {
     console.error("Google integration OAuth callback failed: invalid/expired state", {
@@ -64,10 +35,7 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: "Invalid or expired state" },
-      { status: 400 }
-    );
+    return NextResponse.json({ detail: "Invalid or expired state" }, { status: 400 });
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -90,10 +58,7 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: "Google OAuth not configured" },
-      { status: 503 }
-    );
+    return NextResponse.json({ detail: "Google OAuth not configured" }, { status: 503 });
   }
 
   const hasServerSupabaseKey =
@@ -159,7 +124,12 @@ export async function POST(request: NextRequest) {
         "integration_connect_failed",
         "integration",
         null,
-        { provider: "google", stage: "token_exchange_failed", status: tokenRes.status }
+        {
+          provider: "google",
+          stage: "token_exchange_failed",
+          status: tokenRes.status,
+          error: msg.slice(0, 200),
+        }
       );
     } catch {
       //
@@ -198,15 +168,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const integrationType =
-    body.type === "google_sheets" ? "google_sheets" : "google_drive";
-
+  const integrationType = integrationTypeFromRequest(type);
   const out = await integrationsDomain.createUserIntegration(
     context.tenantId,
     context.userId,
     integrationType,
     { refresh_token: refreshToken },
-    body.display_name ?? null
+    display_name ?? null
   );
 
   if ("error" in out) {
@@ -228,10 +196,7 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: out.error },
-      { status: 400 }
-    );
+    return NextResponse.json({ detail: out.error }, { status: 400 });
   }
 
   try {
@@ -247,6 +212,82 @@ export async function POST(request: NextRequest) {
     //
   }
 
-  return NextResponse.json({ integration: out.row, success: true });
+  return NextResponse.json({
+    integration: out.row,
+    success: true,
+    created_scope: "user",
+    integration_type: integrationType,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const result = await getCurrentContext(request);
+  if ("response" in result) return result.response;
+  const { context } = result;
+
+  // Make it explicit in DB logs whether the callback endpoint is ever reached.
+  // This helps distinguish "callback not hit" from "OAuth state/token issues".
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "integrations/google/callback" }
+    );
+  } catch {
+    //
+  }
+
+  let body: {
+    code?: string;
+    state?: string;
+    display_name?: string;
+    type?: string;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  const { code, state, display_name, type } = body;
+  if (!code || !state) {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  return handleCallback({ context, code, state, display_name, type });
+}
+
+export async function GET(request: NextRequest) {
+  const result = await getCurrentContext(request);
+  if ("response" in result) return result.response;
+  const { context } = result;
+
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "integrations/google/callback", method: "GET" }
+    );
+  } catch {
+    //
+  }
+
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code") ?? undefined;
+  const state = url.searchParams.get("state") ?? undefined;
+  const display_name = url.searchParams.get("display_name") ?? undefined;
+  const type = url.searchParams.get("type") ?? undefined;
+
+  if (!code || !state) {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  return handleCallback({ context, code, state, display_name, type });
 }
 

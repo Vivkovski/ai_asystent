@@ -52,6 +52,9 @@ export class GoogleDriveAdapter {
         fields: "files(id,name,webViewLink,mimeType)",
         orderBy: "modifiedTime desc",
         q,
+        // Allow access to shared drives (My Drive + Shared Drives)
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
       });
       const files = res.data.files ?? [];
       const fragments: Fragment[] = files.slice(0, limit).map((f) => ({
@@ -89,7 +92,12 @@ export class GoogleDriveAdapter {
       );
       oauth2Client.setCredentials({ refresh_token });
       const drive = google.drive({ version: "v3", auth: oauth2Client });
-      await drive.files.list({ pageSize: 1, fields: "files(id)" });
+      await drive.files.list({
+        pageSize: 1,
+        fields: "files(id)",
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      });
       return { ok: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

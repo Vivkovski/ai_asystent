@@ -1,53 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentContext } from "@/lib/server/auth";
+import type { CurrentContext } from "@/lib/server/auth";
 import { requireAdmin } from "@/lib/server/auth-admin";
 import { consumeState } from "@/lib/server/google-oauth";
 import * as integrationsDomain from "@/lib/server/domain/integrations";
 import { logAudit } from "@/lib/server/domain/audit";
 
-export async function POST(request: NextRequest) {
-  const result = await getCurrentContext(request);
-  if ("response" in result) return result.response;
-  const { context } = result;
+function integrationTypeFromRequest(type?: string): "google_drive" | "google_sheets" {
+  return type === "google_sheets" ? "google_sheets" : "google_drive";
+}
 
-  // Make it explicit in DB logs whether the callback endpoint is ever reached.
-  // This is intentionally before `consumeState()` to separate "callback not hit"
-  // from "state invalid / token exchange failed".
-  try {
-    await logAudit(
-      context.tenantId,
-      context.userId,
-      "google_oauth_callback_reached",
-      "integration",
-      null,
-      { provider: "google", route: "admin/integrations/google/callback" }
-    );
-  } catch {
-    //
-  }
-  const forbidden = requireAdmin(context);
-  if (forbidden) return forbidden.response;
-  let body: {
-    code?: string;
-    state?: string;
-    display_name?: string;
-    type?: string;
-  };
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { detail: "code and state required" },
-      { status: 400 }
-    );
-  }
-  const { code, state } = body;
-  if (!code || !state) {
-    return NextResponse.json(
-      { detail: "code and state required" },
-      { status: 400 }
-    );
-  }
+async function handleCallback(args: {
+  context: CurrentContext;
+  code: string;
+  state: string;
+  display_name?: string;
+  type?: string;
+}) {
+  const { context, code, state, display_name, type } = args;
+
   if (!consumeState(state)) {
     console.error("Google integration OAuth callback failed: invalid/expired state", {
       tenantId: context.tenantId,
@@ -65,11 +36,9 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: "Invalid or expired state" },
-      { status: 400 }
-    );
+    return NextResponse.json({ detail: "Invalid or expired state" }, { status: 400 });
   }
+
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim();
@@ -90,15 +59,29 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: "Google OAuth not configured" },
-      { status: 503 }
-    );
+    return NextResponse.json({ detail: "Google OAuth not configured" }, { status: 503 });
   }
+
   const hasServerSupabaseKey =
     !!process.env.SUPABASE_KEY || !!process.env.SUPABASE_SERVICE_ROLE_KEY;
   const hasEncryptionKey = !!process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length >= 32;
   if (!process.env.SUPABASE_URL || !hasServerSupabaseKey || !hasEncryptionKey) {
+    console.error("Supabase/encryption not configured (admin callback)", {
+      tenantId: context.tenantId,
+      userId: context.userId,
+    });
+    try {
+      await logAudit(
+        context.tenantId,
+        context.userId,
+        "integration_connect_failed",
+        "integration",
+        null,
+        { provider: "google", stage: "server_not_configured" }
+      );
+    } catch {
+      //
+    }
     return NextResponse.json(
       {
         detail:
@@ -107,6 +90,7 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   }
+
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -118,6 +102,7 @@ export async function POST(request: NextRequest) {
       grant_type: "authorization_code",
     }),
   });
+
   if (!tokenRes.ok) {
     const errBody = await tokenRes.text();
     let msg = errBody;
@@ -140,7 +125,12 @@ export async function POST(request: NextRequest) {
         "integration_connect_failed",
         "integration",
         null,
-        { provider: "google", stage: "token_exchange_failed", status: tokenRes.status }
+        {
+          provider: "google",
+          stage: "token_exchange_failed",
+          status: tokenRes.status,
+          error: msg.slice(0, 200),
+        }
       );
     } catch {
       //
@@ -150,6 +140,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+
   const tokenData = (await tokenRes.json()) as { refresh_token?: string };
   const refreshToken = tokenData.refresh_token;
   if (!refreshToken) {
@@ -177,14 +168,15 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const integrationType =
-    body.type === "google_sheets" ? "google_sheets" : "google_drive";
+
+  const integrationType = integrationTypeFromRequest(type);
   const out = await integrationsDomain.createIntegration(
     context.tenantId,
     integrationType,
     { refresh_token: refreshToken },
-    body.display_name ?? null
+    display_name ?? null
   );
+
   if ("error" in out) {
     console.warn("Google integration createIntegration failed (admin callback)", {
       tenantId: context.tenantId,
@@ -204,11 +196,9 @@ export async function POST(request: NextRequest) {
     } catch {
       //
     }
-    return NextResponse.json(
-      { detail: out.error },
-      { status: 400 }
-    );
+    return NextResponse.json({ detail: out.error }, { status: 400 });
   }
+
   try {
     await logAudit(
       context.tenantId,
@@ -221,5 +211,89 @@ export async function POST(request: NextRequest) {
   } catch {
     //
   }
-  return NextResponse.json({ integration: out.row, success: true });
+
+  return NextResponse.json({
+    integration: out.row,
+    success: true,
+    created_scope: "tenant",
+    integration_type: integrationType,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const result = await getCurrentContext(request);
+  if ("response" in result) return result.response;
+  const { context } = result;
+
+  // Make it explicit in DB logs whether the callback endpoint is ever reached.
+  // This is intentionally before `consumeState()` to separate "callback not hit"
+  // from "state invalid / token exchange failed".
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "admin/integrations/google/callback" }
+    );
+  } catch {
+    //
+  }
+  const forbidden = requireAdmin(context);
+  if (forbidden) return forbidden.response;
+
+  let body: {
+    code?: string;
+    state?: string;
+    display_name?: string;
+    type?: string;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  const { code, state, display_name, type } = body;
+  if (!code || !state) {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  return handleCallback({ context, code, state, display_name, type });
+}
+
+export async function GET(request: NextRequest) {
+  const result = await getCurrentContext(request);
+  if ("response" in result) return result.response;
+  const { context } = result;
+
+  // Let DB logs explicitly confirm callback entry for GET as well.
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "admin/integrations/google/callback", method: "GET" }
+    );
+  } catch {
+    //
+  }
+
+  const forbidden = requireAdmin(context);
+  if (forbidden) return forbidden.response;
+
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code") ?? undefined;
+  const state = url.searchParams.get("state") ?? undefined;
+  const display_name = url.searchParams.get("display_name") ?? undefined;
+  const type = url.searchParams.get("type") ?? undefined;
+
+  if (!code || !state) {
+    return NextResponse.json({ detail: "code and state required" }, { status: 400 });
+  }
+
+  return handleCallback({ context, code, state, display_name, type });
 }
