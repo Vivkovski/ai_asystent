@@ -102,7 +102,12 @@ function AddIntegrationForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setTestError(data.detail || res.statusText || "Nie udało się uzyskać adresu Google.");
+        setTestError(
+          (typeof data?.message === "string" && data.message) ||
+            (typeof data?.detail === "string" && data.detail) ||
+            res.statusText ||
+            "Nie udało się uzyskać adresu Google."
+        );
         return;
       }
       const url = data.url as string | undefined;

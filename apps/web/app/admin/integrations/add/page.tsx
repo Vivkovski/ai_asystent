@@ -93,7 +93,11 @@ function AddIntegrationForm() {
       return;
     }
     setTestStatus("err");
-    setTestError(data.detail || res.statusText);
+    const msg =
+      (typeof data?.message === "string" && data.message) ||
+      (typeof data?.detail === "string" && data.detail) ||
+      res.statusText;
+    setTestError(msg);
   };
 
   const handleSave = () => {
@@ -111,7 +115,12 @@ function AddIntegrationForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setTestError(data.detail || res.statusText || "Nie udało się uzyskać adresu Google.");
+        setTestError(
+          (typeof data?.message === "string" && data.message) ||
+            (typeof data?.detail === "string" && data.detail) ||
+            res.statusText ||
+            "Nie udało się uzyskać adresu Google."
+        );
         return;
       }
       const url = data.url;

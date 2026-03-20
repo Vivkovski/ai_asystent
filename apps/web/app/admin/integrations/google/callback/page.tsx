@@ -76,7 +76,12 @@ function GoogleOAuthCallback() {
 
       const data = await res.json().catch(() => ({}));
       setStatus("err");
-      setMessage(data.detail || res.statusText || "Połączenie z Google nie powiodło się.");
+      setMessage(
+        (typeof data?.message === "string" && data.message) ||
+          (typeof data?.detail === "string" && data.detail) ||
+          res.statusText ||
+          "Połączenie z Google nie powiodło się."
+      );
     };
 
     run();

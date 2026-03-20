@@ -79,7 +79,11 @@ export default function EditIntegrationPage() {
       router.refresh();
       return;
     }
-    setError(data.detail || res.statusText);
+    const msg =
+      (typeof data?.message === "string" && data.message) ||
+      (typeof data?.detail === "string" && data.detail) ||
+      res.statusText;
+    setError(msg);
     setAction(null);
   };
 
@@ -99,7 +103,11 @@ export default function EditIntegrationPage() {
       router.refresh();
       return;
     }
-    setError(data.detail || res.statusText);
+    const msg =
+      (typeof data?.message === "string" && data.message) ||
+      (typeof data?.detail === "string" && data.detail) ||
+      res.statusText;
+    setError(msg);
     setAction(null);
   };
 
