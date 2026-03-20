@@ -44,14 +44,60 @@ export class GoogleDriveAdapter {
       );
       oauth2Client.setCredentials({ refresh_token });
       const drive = google.drive({ version: "v3", auth: oauth2Client });
-      const q = input.query_text.trim()
-        ? `fullText contains '${input.query_text.trim().replace(/'/g, "''")}'`
-        : undefined;
+      const rawQuery = input.query_text.trim();
+
+      // Fragments we return are file names (`f.name`).
+      // Searching `fullText` with the whole user question (e.g. "jakie mam pliki w drive")
+      // often produces zero results. Prefer `name contains` with a term extracted from the question.
+      const stopWords = new Set([
+        // Polish common words (used in listing-type questions)
+        "jakie",
+        "mam",
+        "moje",
+        "pliki",
+        "plik",
+        "foldery",
+        "folder",
+        "w",
+        "na",
+        "z",
+        "do",
+        "dysku",
+        "dysk",
+        "google",
+        "drive",
+        "czy",
+        "pokaż",
+        "pokaz",
+        "wyniki",
+        "lista",
+        "podaj",
+        "wymień",
+        "wymien",
+      ]);
+
+      const tokens = rawQuery
+        .toLowerCase()
+        .replace(/[^a-z0-9ąćęłńóśźż]+/gi, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+
+      const meaningful = tokens.filter((t) => {
+        if (stopWords.has(t)) return false;
+        // Keep digits (e.g. "2025") and longer words.
+        if (/^\d+$/.test(t)) return true;
+        return t.length >= 3;
+      });
+
+      const term = meaningful.slice(0, 8).join(" ");
+      const escapedTerm = term.replace(/'/g, "''");
+      const q = term ? `name contains '${escapedTerm}' and trashed=false` : "trashed=false";
       const res = await drive.files.list({
         pageSize: limit,
         fields: "files(id,name,webViewLink,mimeType)",
         orderBy: "modifiedTime desc",
         q,
+        corpora: "allDrives",
         // Allow access to shared drives (My Drive + Shared Drives)
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
@@ -97,6 +143,7 @@ export class GoogleDriveAdapter {
         fields: "files(id)",
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
+        corpora: "allDrives",
       });
       return { ok: true };
     } catch (err: unknown) {
