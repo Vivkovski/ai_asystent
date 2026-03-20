@@ -97,6 +97,13 @@ export default function AdminLayout({
   }
 
   if (role === "end_user") {
+    // For OAuth callbacks we must render the page even if the user is not `tenant_admin`,
+    // otherwise the callback page won't run its POST to the backend.
+    const isGoogleCallback =
+      pathname?.startsWith("/admin/integrations/google/callback") ?? false;
+    if (isGoogleCallback) {
+      return <main className="p-4">{children}</main>;
+    }
     return (
       <main className="p-4">
         <p className="text-neutral-600">Przekierowanie…</p>
