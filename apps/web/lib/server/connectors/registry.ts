@@ -3,7 +3,7 @@
  */
 
 import type { ConnectorAdapter } from "./contract";
-import { MockBitrixAdapter } from "./mock-bitrix";
+import { BitrixAdapter } from "./bitrix";
 import { GoogleDriveAdapter } from "./google-drive";
 
 const adapters = new Map<string, ConnectorAdapter>();
@@ -22,7 +22,7 @@ let registered = false;
 export function registerAdapters(): void {
   if (registered) return;
   registered = true;
-  register("bitrix", new MockBitrixAdapter());
+  register("bitrix", new BitrixAdapter());
   const driveAdapter = new GoogleDriveAdapter();
   register("google_drive", driveAdapter);
   register("google_sheets", driveAdapter);

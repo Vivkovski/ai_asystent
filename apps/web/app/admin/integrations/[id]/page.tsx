@@ -20,7 +20,11 @@ export default function EditIntegrationPage() {
     last_error: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bitrixInputMode, setBitrixInputMode] = useState<"full" | "parts">("full");
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [bitrixDomain, setBitrixDomain] = useState("");
+  const [bitrixUserId, setBitrixUserId] = useState("");
+  const [bitrixWebhookCode, setBitrixWebhookCode] = useState("");
   const [action, setAction] = useState<"reconnect" | "disable" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,10 +51,18 @@ export default function EditIntegrationPage() {
     if (!token || !id || row?.type !== "bitrix") return;
     setAction("reconnect");
     setError(null);
+    const credentials =
+      bitrixInputMode === "full"
+        ? { webhook_url: webhookUrl }
+        : {
+            bitrix_domain: bitrixDomain.trim(),
+            user_id: bitrixUserId.trim(),
+            webhook_code: bitrixWebhookCode.trim(),
+          };
     const res = await apiFetch(`/api/v1/admin/integrations/${id}`, {
       method: "PATCH",
       accessToken: token,
-      body: JSON.stringify({ credentials: { webhook_url: webhookUrl } }),
+      body: JSON.stringify({ credentials }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
@@ -116,19 +128,74 @@ export default function EditIntegrationPage() {
       <div className="space-y-4">
         {row.type === "bitrix" && (
           <div>
-            <Input
-              label="URL webhooka (re-auth)"
-              type="url"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://..."
-            />
+            <div className="space-y-3">
+              <div className="flex gap-2 items-center">
+                <Button
+                  type="button"
+                  variant={bitrixInputMode === "full" ? "primary" : "secondary"}
+                  size="md"
+                  onClick={() => setBitrixInputMode("full")}
+                  className="!px-3"
+                >
+                  Wklej URL
+                </Button>
+                <Button
+                  type="button"
+                  variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
+                  size="md"
+                  onClick={() => setBitrixInputMode("parts")}
+                  className="!px-3"
+                >
+                  Podaj składniki
+                </Button>
+              </div>
+
+              {bitrixInputMode === "full" ? (
+                <Input
+                  label="URL webhooka Bitrix24 (re-auth)"
+                  type="url"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
+                />
+              ) : (
+                <div className="space-y-3">
+                  <Input
+                    label="Domain Bitrix24 (np. my.bitrix24.com)"
+                    type="text"
+                    value={bitrixDomain}
+                    onChange={(e) => setBitrixDomain(e.target.value)}
+                    placeholder="my.bitrix24.com"
+                  />
+                  <Input
+                    label="user_id (twórca webhooka)"
+                    type="text"
+                    value={bitrixUserId}
+                    onChange={(e) => setBitrixUserId(e.target.value)}
+                    placeholder="1"
+                  />
+                  <Input
+                    label="webhook_code (sekretny kod)"
+                    type="text"
+                    value={bitrixWebhookCode}
+                    onChange={(e) => setBitrixWebhookCode(e.target.value)}
+                    placeholder="abc123"
+                    className="font-mono"
+                  />
+                </div>
+              )}
+            </div>
             <Button
               type="button"
               variant="secondary"
               className="mt-2"
               onClick={handleReconnect}
-              disabled={action !== null || !webhookUrl.trim()}
+              disabled={
+                action !== null ||
+                (bitrixInputMode === "full"
+                  ? !webhookUrl.trim()
+                  : !bitrixDomain.trim() || !bitrixUserId.trim() || !bitrixWebhookCode.trim())
+              }
             >
               {action === "reconnect" ? "Zapisywanie…" : "Połącz ponownie"}
             </Button>

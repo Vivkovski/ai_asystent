@@ -24,7 +24,11 @@ function AddIntegrationForm() {
     if (typeFromUrl && TYPES.some((t) => t.id === typeFromUrl)) return typeFromUrl;
     return "bitrix";
   });
+  const [bitrixInputMode, setBitrixInputMode] = useState<"full" | "parts">("full");
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [bitrixDomain, setBitrixDomain] = useState("");
+  const [bitrixUserId, setBitrixUserId] = useState("");
+  const [bitrixWebhookCode, setBitrixWebhookCode] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
@@ -47,7 +51,13 @@ function AddIntegrationForm() {
 
   const credentials =
     type === "bitrix"
-      ? { webhook_url: webhookUrl }
+      ? bitrixInputMode === "full"
+        ? { webhook_url: webhookUrl }
+        : {
+            bitrix_domain: bitrixDomain.trim(),
+            user_id: bitrixUserId.trim(),
+            webhook_code: bitrixWebhookCode.trim(),
+          }
       : type === "google_drive"
         ? { refresh_token: refreshToken.trim() }
         : type === "google_sheets"
@@ -122,7 +132,9 @@ function AddIntegrationForm() {
 
   const canSave =
     type === "bitrix"
-      ? webhookUrl.trim().length > 0
+      ? bitrixInputMode === "full"
+        ? webhookUrl.trim().length > 0
+        : bitrixDomain.trim().length > 0 && bitrixUserId.trim().length > 0 && bitrixWebhookCode.trim().length > 0
       : type === "google_drive" || type === "google_sheets"
         ? refreshToken.trim().length > 0  // manual token path
         : false;
@@ -156,13 +168,63 @@ function AddIntegrationForm() {
           placeholder={TYPES.find((t) => t.id === type)?.label}
         />
         {type === "bitrix" && (
-          <Input
-            label="URL webhooka Bitrix24"
-            type="url"
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder="https://..."
-          />
+          <div className="space-y-3">
+            <div className="flex gap-2 items-center">
+              <Button
+                type="button"
+                variant={bitrixInputMode === "full" ? "primary" : "secondary"}
+                size="md"
+                onClick={() => setBitrixInputMode("full")}
+                className="!px-3"
+              >
+                Wklej URL
+              </Button>
+              <Button
+                type="button"
+                variant={bitrixInputMode === "parts" ? "primary" : "secondary"}
+                size="md"
+                onClick={() => setBitrixInputMode("parts")}
+                className="!px-3"
+              >
+                Podaj składniki
+              </Button>
+            </div>
+
+            {bitrixInputMode === "full" ? (
+              <Input
+                label="URL webhooka Bitrix24 (Incoming REST)"
+                type="url"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://my.bitrix24.com/rest/<user_id>/<webhook_code>/"
+              />
+            ) : (
+              <div className="space-y-3">
+                <Input
+                  label="Domain Bitrix24 (np. my.bitrix24.com)"
+                  type="text"
+                  value={bitrixDomain}
+                  onChange={(e) => setBitrixDomain(e.target.value)}
+                  placeholder="my.bitrix24.com"
+                />
+                <Input
+                  label="user_id (twórca webhooka)"
+                  type="text"
+                  value={bitrixUserId}
+                  onChange={(e) => setBitrixUserId(e.target.value)}
+                  placeholder="1"
+                />
+                <Input
+                  label="webhook_code (sekretny kod)"
+                  type="text"
+                  value={bitrixWebhookCode}
+                  onChange={(e) => setBitrixWebhookCode(e.target.value)}
+                  placeholder="abc123"
+                  className="font-mono"
+                />
+              </div>
+            )}
+          </div>
         )}
         {(type === "google_drive" || type === "google_sheets") && (
           <div className="space-y-3">

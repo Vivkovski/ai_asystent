@@ -4,12 +4,29 @@
 
 import type { AskResponse, SourceItem, MessageStatus } from "@repo/shared";
 import * as chatDomain from "../domain/chat";
+import * as integrationsDomain from "../domain/integrations";
 import { logAudit } from "../domain/audit";
 import { classifyIntent } from "../routing/intent";
 import { getSourcesForIntent } from "../routing/sourceSelector";
 import { fetchAll } from "../connectors/runner";
 import { synthesizeAnswer } from "../llm/openrouter";
 import { DEFAULT_LIMITS } from "../connectors/contract";
+
+function isBitrixConnectionQuestion(question: string): boolean {
+  const q = question.toLowerCase();
+  const hasBitrix = q.includes("bitrix");
+  const hasConnectionSignal =
+    q.includes("połączen") ||
+    q.includes("polaczen") ||
+    q.includes("połącz") ||
+    q.includes("connected") ||
+    q.includes("działa") ||
+    q.includes("dzial") ||
+    q.includes("status") ||
+    q.includes("włącz") ||
+    q.includes("integracj");
+  return hasBitrix && hasConnectionSignal;
+}
 
 export async function runAsk(
   tenantId: string,
@@ -33,18 +50,100 @@ export async function runAsk(
   );
   const userMsgId = String(userMsg.id);
 
-  const intent = await classifyIntent(content);
-  const sourceIds = await getSourcesForIntent(tenantId, userId, intent);
+  // Special-case: connection/health questions should not rely on LLM + mock fragments.
+  // We answer deterministically from the integration status stored in Supabase.
+  if (isBitrixConnectionQuestion(content)) {
+    const [tenantItems, userItems] = await Promise.all([
+      integrationsDomain.listIntegrations(tenantId),
+      integrationsDomain.listUserIntegrations(tenantId, userId),
+    ]);
 
-  if (sourceIds.length === 0) {
-    await chatDomain.updateMessage(userMsgId, { status: "failed" });
+    const tenantBitrix = tenantItems.find((i) => String(i.type) === "bitrix");
+    const userBitrix = userItems.find((i) => String(i.type) === "bitrix");
+
+    const chosen =
+      tenantBitrix?.enabled === true
+        ? tenantBitrix
+        : userBitrix?.enabled === true
+          ? userBitrix
+          : null;
+
+    let answer = "";
+    if (chosen) {
+      const lastTestedAt = chosen.last_tested_at
+        ? String(chosen.last_tested_at)
+        : "brak";
+      const lastError = chosen.last_error ? String(chosen.last_error) : null;
+      if (lastError) {
+        answer = `Masz włączoną integrację Bitrix24, ale ostatni test nie powiódł się: ${lastError} (ostatni test: ${lastTestedAt}).`;
+      } else {
+        answer = `Masz włączoną integrację Bitrix24. Ostatni test: ${lastTestedAt}.`;
+      }
+    } else {
+      answer =
+        "Brak włączonej integracji Bitrix24. Dodaj integrację w panelu admin i wykonaj test połączenia.";
+    }
+
     const assistantMsg = await chatDomain.createMessage(
       conversationId as string,
       "assistant",
-      "Brak podłączonych źródeł dla tego typu zapytania. Skonfiguruj integracje w panelu admin.",
+      answer,
       "completed"
     );
-    return response(assistantMsg, [], null);
+
+    const sourcesForResponse: SourceItem[] = [
+      { id: 1, type: "crm", title: "Bitrix24", link: null, unavailable: false },
+    ];
+
+    await chatDomain.insertAnswerSources(String(assistantMsg.id), [
+      {
+        type: "crm",
+        title: "Bitrix24",
+        link: null,
+        fragment_count: chosen ? 1 : 0,
+      },
+    ]);
+
+    try {
+      await logAudit(tenantId, userId, "message_created", "message", String(assistantMsg.id), {
+        sources_used: ["bitrix"],
+        status: "completed",
+      });
+    } catch {
+      // ignore audit errors
+    }
+
+    // Keep user message status unchanged; this branch always "completes" the assistant answer.
+    return response(assistantMsg, sourcesForResponse, null);
+  }
+
+  const intent = await classifyIntent(content);
+  let sourceIds = await getSourcesForIntent(tenantId, userId, intent);
+
+  if (sourceIds.length === 0) {
+    const [tenantItems, userItems] = await Promise.all([
+      integrationsDomain.listIntegrations(tenantId),
+      integrationsDomain.listUserIntegrations(tenantId, userId),
+    ]);
+
+    const enabledTypes = new Set<string>();
+    for (const i of tenantItems) if (i.enabled === true && typeof i.type === "string") enabledTypes.add(i.type);
+    for (const i of userItems) if (i.enabled === true && typeof i.type === "string") enabledTypes.add(i.type);
+
+    const priority: string[] = ["bitrix", "google_drive", "google_sheets"];
+    const fallback = priority.find((t) => enabledTypes.has(t));
+    if (fallback) {
+      sourceIds = [fallback];
+    } else {
+      await chatDomain.updateMessage(userMsgId, { status: "failed" });
+      const assistantMsg = await chatDomain.createMessage(
+        conversationId as string,
+        "assistant",
+        "Brak podłączonych źródeł dla tego typu zapytania. Skonfiguruj integracje w panelu admin.",
+        "completed"
+      );
+      return response(assistantMsg, [], null);
+    }
   }
 
   const outputs = await fetchAll(sourceIds, tenantId, userId, content, DEFAULT_LIMITS);
