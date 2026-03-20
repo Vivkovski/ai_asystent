@@ -67,8 +67,15 @@ export default function AdminLayout({
     // Avoid redirect while Next.js is still resolving `pathname`.
     // Otherwise the OAuth callback route can get unmounted before it renders.
     if (!pathname) return;
+    // Be tolerant to minor route variations (trailing slash, extra segments, etc.).
+    const hasOAuthParams =
+      typeof window !== "undefined" &&
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.has("code") && params.has("state");
+      })();
     const isGoogleCallback =
-      pathname.startsWith("/admin/integrations/google/callback");
+      pathname.includes("/admin/integrations/google/callback") || hasOAuthParams;
     if (mounted && role === "end_user" && !isGoogleCallback) {
       router.replace("/chat");
     }
@@ -102,8 +109,14 @@ export default function AdminLayout({
   if (role === "end_user") {
     // For OAuth callbacks we must render the page even if the user is not `tenant_admin`,
     // otherwise the callback page won't run its POST to the backend.
+    const hasOAuthParams =
+      typeof window !== "undefined" &&
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.has("code") && params.has("state");
+      })();
     const isGoogleCallback =
-      pathname?.startsWith("/admin/integrations/google/callback") ?? false;
+      (pathname?.includes("/admin/integrations/google/callback") ?? false) || hasOAuthParams;
     if (isGoogleCallback) {
       return <main className="p-4">{children}</main>;
     }
