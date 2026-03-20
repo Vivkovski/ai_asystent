@@ -9,6 +9,22 @@ export async function POST(request: NextRequest) {
   const result = await getCurrentContext(request);
   if ("response" in result) return result.response;
   const { context } = result;
+
+  // Make it explicit in DB logs whether the callback endpoint is ever reached.
+  // This is intentionally before `consumeState()` to separate "callback not hit"
+  // from "state invalid / token exchange failed".
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "admin/integrations/google/callback" }
+    );
+  } catch {
+    //
+  }
   const forbidden = requireAdmin(context);
   if (forbidden) return forbidden.response;
   let body: {

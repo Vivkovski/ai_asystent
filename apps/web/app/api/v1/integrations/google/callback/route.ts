@@ -9,6 +9,21 @@ export async function POST(request: NextRequest) {
   if ("response" in result) return result.response;
   const { context } = result;
 
+  // Make it explicit in DB logs whether the callback endpoint is ever reached.
+  // This helps distinguish "callback not hit" from "OAuth state/token issues".
+  try {
+    await logAudit(
+      context.tenantId,
+      context.userId,
+      "google_oauth_callback_reached",
+      "integration",
+      null,
+      { provider: "google", route: "integrations/google/callback" }
+    );
+  } catch {
+    //
+  }
+
   let body: {
     code?: string;
     state?: string;
