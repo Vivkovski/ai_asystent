@@ -34,5 +34,7 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("state", state);
   url.searchParams.set("access_type", "offline");
   url.searchParams.set("prompt", "consent");
-  return NextResponse.json({ url: url.toString(), state });
+  // Debugging aid: lets frontend confirm what redirect_uri was used.
+  // Safe (no secrets) and helpful when Google reports redirect_uri_mismatch.
+  return NextResponse.json({ url: url.toString(), state, redirectUri });
 }
